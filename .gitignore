@@ -1,2 +1,49 @@
-./env
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+env/
+.env/
+.venv/
+venv/
+
+# Env files / secrets
+.env
+.env.*
+.DS_Store
+
+# Django / sqlite
+db.sqlite3
+db.sqlite3-journal
+
+# Logs
+*.log
+
+# Media / collected static
+media/
+staticfiles/
+
+# Tooling
+.idea/
+.vscode/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage.xml
+.coverage*
+dist/
+build/
+
+# Node (if added later)
+node_modules/
+package-lock.json
+yarn.lock
+pdm.lock
+
+# Misc
+*.bak
+*.swp
+*.swo./env
 env
