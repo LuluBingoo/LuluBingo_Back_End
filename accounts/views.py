@@ -6,7 +6,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import LoginAttempt
-from .serializers import LoginSerializer, ShopUserSerializer
+from .serializers import (
+    AuthTokenResponseSerializer,
+    ChangePasswordSerializer,
+    LoginSerializer,
+    MeResponseSerializer,
+    ShopUserSerializer,
+)
 
 
 def _get_client_ip(request):
@@ -33,17 +39,7 @@ class LoginView(APIView):
     @extend_schema(
         request=LoginSerializer,
         responses={
-            200: OpenApiResponse(
-                description="Token issued",
-                response={
-                    "type": "object",
-                    "properties": {
-                        "token": {"type": "string"},
-                        "user": {"type": "object"},
-                    },
-                    "required": ["token", "user"],
-                },
-            ),
+            200: AuthTokenResponseSerializer,
             400: OpenApiResponse(description="Validation error / invalid credentials"),
         },
     )
@@ -56,7 +52,13 @@ class LoginView(APIView):
         user = serializer.validated_data["user"]
         token, _ = Token.objects.get_or_create(user=user)
         _record_attempt(user.username, True, request, user=user)
-        return Response({"token": token.key, "user": ShopUserSerializer(user).data})
+        return Response(
+            {
+                "token": token.key,
+                "user": ShopUserSerializer(user).data,
+                "requires_password_change": user.must_change_password,
+            }
+        )
 
 
 class MeView(APIView):
@@ -64,16 +66,38 @@ class MeView(APIView):
 
     @extend_schema(
         responses={
-            200: OpenApiResponse(
-                description="Current authenticated shop user",
-                response={
-                    "type": "object",
-                    "properties": {"user": {"type": "object"}},
-                    "required": ["user"],
-                },
-            ),
+            200: MeResponseSerializer,
             401: OpenApiResponse(description="Authentication required"),
         }
     )
     def get(self, request):
         return Response({"user": ShopUserSerializer(request.user).data})
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        request=ChangePasswordSerializer,
+        responses={
+            200: AuthTokenResponseSerializer,
+            400: OpenApiResponse(description="Validation error"),
+            401: OpenApiResponse(description="Authentication required"),
+        },
+    )
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        user.set_password(serializer.validated_data["new_password"])
+        user.must_change_password = False
+        user.save(update_fields=["password", "must_change_password"])
+        Token.objects.filter(user=user).delete()
+        new_token = Token.objects.create(user=user)
+        return Response(
+            {
+                "token": new_token.key,
+                "user": ShopUserSerializer(user).data,
+                "requires_password_change": user.must_change_password,
+            }
+        )

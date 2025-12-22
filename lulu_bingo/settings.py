@@ -179,7 +179,13 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Dallol Bingo API",
-    "DESCRIPTION": "Auth & Shop Identity API",
+    "DESCRIPTION": (
+        "Authentication & shop identity endpoints for Dallol Bingo. "
+        "Shops are provisioned by HQ admins only; no self-signup is allowed. "
+        "Each shop receives temporary credentials, must change the password on first login, "
+        "and can be activated, suspended, or blocked centrally. Tokens issued here secure "
+        "all subsequent Bingo operations."
+    ),
     "VERSION": "0.1.0",
 }
 
