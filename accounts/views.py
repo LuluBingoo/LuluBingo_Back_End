@@ -1,4 +1,5 @@
 from django.utils import timezone
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import permissions, status
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -29,6 +30,23 @@ def _record_attempt(username: str, success: bool, request, user=None):
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=LoginSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="Token issued",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "token": {"type": "string"},
+                        "user": {"type": "object"},
+                    },
+                    "required": ["token", "user"],
+                },
+            ),
+            400: OpenApiResponse(description="Validation error / invalid credentials"),
+        },
+    )
     def post(self, request):
         serializer = LoginSerializer(data=request.data, context={"request": request})
         if not serializer.is_valid():
@@ -44,5 +62,18 @@ class LoginView(APIView):
 class MeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(
+                description="Current authenticated shop user",
+                response={
+                    "type": "object",
+                    "properties": {"user": {"type": "object"}},
+                    "required": ["user"],
+                },
+            ),
+            401: OpenApiResponse(description="Authentication required"),
+        }
+    )
     def get(self, request):
         return Response({"user": ShopUserSerializer(request.user).data})
