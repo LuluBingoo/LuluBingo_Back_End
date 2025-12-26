@@ -191,6 +191,27 @@ SPECTACULAR_SETTINGS = {
 
 
 # --------------------------------------------------
+# Email
+# --------------------------------------------------
+
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = str_to_bool(os.getenv("EMAIL_USE_TLS"), True)
+EMAIL_USE_SSL = str_to_bool(os.getenv("EMAIL_USE_SSL"), False)
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "30"))
+EMAIL_FAIL_SILENTLY = str_to_bool(os.getenv("EMAIL_FAIL_SILENTLY"), False)
+
+# Prefer SMTP when host is provided; otherwise fall back to console for local dev.
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.smtp.EmailBackend" if EMAIL_HOST else "django.core.mail.backends.console.EmailBackend",
+)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@lulu-bingo.local")
+
+
+# --------------------------------------------------
 # Custom User
 # --------------------------------------------------
 
