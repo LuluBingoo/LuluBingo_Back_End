@@ -51,6 +51,8 @@ INSTALLED_APPS = [
 
     # Local
     "accounts",
+    "games",
+    "transactions",
 ]
 
 
