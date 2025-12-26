@@ -50,6 +50,29 @@ class GameDrawView(APIView):
         return Response(data)
 
 
+class GameCartellaDrawView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        responses={200: OpenApiResponse(description="Cartella draw sequence returned")},
+        tags=["Games"],
+        summary="Public cartella draw",
+    )
+    def get(self, request, code: str, cartella_number: int):
+        game = get_object_or_404(Game, game_code=code)
+        cartella_index = cartella_number - 1
+        if cartella_index < 0 or cartella_index >= len(game.cartella_draw_sequences):
+            return Response({"detail": "Cartella not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {
+                "game_code": game.game_code,
+                "cartella_number": cartella_number,
+                "cartella_numbers": game.cartella_numbers[cartella_index],
+                "cartella_draw_sequence": game.cartella_draw_sequences[cartella_index],
+            }
+        )
+
+
 class GameCompleteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

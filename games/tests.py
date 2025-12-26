@@ -79,3 +79,35 @@ class GameTests(APITestCase):
         self.assertEqual(complete_resp.status_code, status.HTTP_200_OK)
         self.assertEqual(complete_resp.data["status"], "completed")
         self.assertEqual(complete_resp.data["winners"], [0])
+
+    def test_public_cartella_draw(self):
+        headers = self.auth_headers()
+        payload = {
+            "bet_amount": "10.00",
+            "num_players": 1,
+            "win_amount": "50.00",
+            "cartella_numbers": [[1, 2, 3], [4, 5, 6]],
+        }
+        create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
+        code = create_resp.data["game_code"]
+
+        # public endpoint requires no auth
+        cartella_resp = self.client.get(reverse("game-cartella-draw", args=[code, 2]))
+        self.assertEqual(cartella_resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(cartella_resp.data["cartella_number"], 2)
+        self.assertEqual(cartella_resp.data["cartella_numbers"], [4, 5, 6])
+        self.assertEqual(len(cartella_resp.data["cartella_draw_sequence"]), 75)
+
+    def test_public_cartella_draw_out_of_range(self):
+        headers = self.auth_headers()
+        payload = {
+            "bet_amount": "10.00",
+            "num_players": 1,
+            "win_amount": "50.00",
+            "cartella_numbers": [[1, 2, 3]],
+        }
+        create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
+        code = create_resp.data["game_code"]
+
+        resp = self.client.get(reverse("game-cartella-draw", args=[code, 5]))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
