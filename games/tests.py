@@ -300,3 +300,85 @@ class GameTests(APITestCase):
         session = ShopBingoSession.objects.get(session_id=session_id)
         self.assertEqual(session.status, ShopBingoSession.Status.LOCKED)
         self.assertIsNotNone(session.game)
+
+    def test_shop_mode_generated_boards_are_unique(self):
+        headers = self.auth_headers()
+        session_resp = self.client.post(
+            reverse("shop-mode-session-create"),
+            {"min_bet_per_cartella": "20.00"},
+            format="json",
+            **headers,
+        )
+        self.assertEqual(session_resp.status_code, status.HTTP_201_CREATED)
+        session_id = session_resp.data["session_id"]
+
+        players = [
+            ("P1", [1, 2, 3, 4]),
+            ("P2", [5, 6, 7, 8]),
+            ("P3", [9, 10, 11, 12]),
+            ("P4", [13, 14, 15, 16]),
+        ]
+
+        for player_name, cartellas in players:
+            reserve_resp = self.client.post(
+                reverse("shop-mode-session-reserve", args=[session_id]),
+                {
+                    "player_name": player_name,
+                    "cartella_numbers": cartellas,
+                    "bet_per_cartella": "20.00",
+                },
+                format="json",
+                **headers,
+            )
+            self.assertEqual(reserve_resp.status_code, status.HTTP_200_OK)
+
+        create_resp = self.client.post(
+            reverse("shop-mode-session-create-game", args=[session_id]),
+            {},
+            format="json",
+            **headers,
+        )
+        self.assertEqual(create_resp.status_code, status.HTTP_200_OK)
+        game_data = create_resp.data["game"]
+        boards = game_data["cartella_numbers"]
+        self.assertEqual(len(boards), 16)
+
+        signatures = {tuple(board) for board in boards}
+        self.assertEqual(len(signatures), len(boards))
+
+    def test_call_progression_uses_backend_sequence(self):
+        headers = self.auth_headers()
+        payload = {
+            "bet_amount": "10.00",
+            "num_players": 1,
+            "win_amount": "50.00",
+            "cartella_numbers": [[1, 2, 3, 4, 5]],
+        }
+        create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
+        self.assertEqual(create_resp.status_code, status.HTTP_201_CREATED)
+        code = create_resp.data["game_code"]
+
+        shuffle_resp = self.client.post(reverse("game-shuffle", args=[code]), {}, format="json", **headers)
+        self.assertEqual(shuffle_resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+        game = Game.objects.get(game_code=code)
+        game.status = Game.Status.PENDING
+        game.started_at = None
+        game.called_numbers = []
+        game.call_cursor = 0
+        game.current_called_number = None
+        game.save(update_fields=["status", "started_at", "called_numbers", "call_cursor", "current_called_number"])
+
+        self.client.post(reverse("game-shuffle", args=[code]), {}, format="json", **headers)
+        start_resp = self.client.post(reverse("game-start", args=[code]), {}, format="json", **headers)
+        self.assertEqual(start_resp.status_code, status.HTTP_200_OK)
+
+        first_call = self.client.post(reverse("game-next-call", args=[code]), {}, format="json", **headers)
+        second_call = self.client.post(reverse("game-next-call", args=[code]), {}, format="json", **headers)
+        self.assertEqual(first_call.status_code, status.HTTP_200_OK)
+        self.assertEqual(second_call.status_code, status.HTTP_200_OK)
+        self.assertNotEqual(first_call.data["called_number"], second_call.data["called_number"])
+
+        state_resp = self.client.get(reverse("game-state", args=[code]), **headers)
+        self.assertEqual(state_resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(state_resp.data["called_numbers"]), 2)

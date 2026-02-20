@@ -31,7 +31,41 @@ def _generate_cartella_board() -> list[int]:
     for min_n, max_n in ranges:
         col = random.sample(range(min_n, max_n + 1), 5)
         numbers.extend(col)
+    numbers[12] = 0
     return numbers
+
+
+def _generate_unique_cartella_boards(count: int) -> list[list[int]]:
+    boards: list[list[int]] = []
+    signatures: set[tuple[int, ...]] = set()
+    attempts = 0
+
+    while len(boards) < count:
+        attempts += 1
+        if attempts > count * 2000:
+            raise ValueError("Failed to generate unique cartella boards")
+
+        board = _generate_cartella_board()
+        signature = tuple(board)
+        if signature in signatures:
+            continue
+
+        signatures.add(signature)
+        boards.append(board)
+
+    return boards
+
+
+def _format_called_number(number: int) -> str:
+    if 1 <= number <= 15:
+        return f"B{number}"
+    if 16 <= number <= 30:
+        return f"I{number}"
+    if 31 <= number <= 45:
+        return f"N{number}"
+    if 46 <= number <= 60:
+        return f"G{number}"
+    return f"O{number}"
 
 
 def _recalculate_session_totals(session: ShopBingoSession) -> tuple[list[int], Decimal]:
@@ -58,7 +92,7 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
     if len(set(all_cartella_numbers)) != len(all_cartella_numbers):
         raise ValueError("Duplicate cartella assignment detected")
 
-    cartella_boards = [_generate_cartella_board() for _ in all_cartella_numbers]
+    cartella_boards = _generate_unique_cartella_boards(len(all_cartella_numbers))
     cartella_map = {str(cartella_number): index for index, cartella_number in enumerate(all_cartella_numbers)}
 
     with db_transaction.atomic():
@@ -72,8 +106,11 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
             cartella_numbers=cartella_boards,
             cartella_number_map=cartella_map,
             shop_players_data=players,
-            status=Game.Status.ACTIVE,
-            started_at=timezone.now(),
+            status=Game.Status.PENDING,
+            called_numbers=[],
+            call_cursor=0,
+            current_called_number=None,
+            started_at=None,
         )
 
         try:
@@ -143,6 +180,139 @@ class GameDrawView(APIView):
             "cartella_draw_sequences": game.cartella_draw_sequences,
         }
         return Response(data)
+
+
+class GameStateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Games"])
+    def get(self, request, code: str):
+        game = get_object_or_404(Game, game_code=code, shop=request.user)
+        current_number = game.current_called_number
+        return Response(
+            {
+                "game_code": game.game_code,
+                "status": game.status,
+                "started_at": game.started_at,
+                "call_cursor": game.call_cursor,
+                "current_called_number": current_number,
+                "current_called_formatted": _format_called_number(current_number)
+                if current_number
+                else None,
+                "called_numbers": game.called_numbers,
+            }
+        )
+
+
+class GameShuffleView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Games"])
+    def post(self, request, code: str):
+        game = get_object_or_404(Game, game_code=code, shop=request.user)
+
+        if game.status != Game.Status.PENDING:
+            return Response(
+                {"detail": "Shuffle is only allowed before game start"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        game.draw_sequence = random.sample(range(1, 76), 75)
+        game.called_numbers = []
+        game.call_cursor = 0
+        game.current_called_number = None
+        game.save(
+            update_fields=[
+                "draw_sequence",
+                "called_numbers",
+                "call_cursor",
+                "current_called_number",
+            ]
+        )
+
+        return Response(
+            {
+                "game_code": game.game_code,
+                "status": game.status,
+                "message": "Shuffled successfully",
+            }
+        )
+
+
+class GameStartView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Games"])
+    def post(self, request, code: str):
+        game = get_object_or_404(Game, game_code=code, shop=request.user)
+
+        if game.status == Game.Status.ACTIVE:
+            return Response({"detail": "Game already started"}, status=status.HTTP_200_OK)
+
+        if game.status != Game.Status.PENDING:
+            return Response(
+                {"detail": "Only pending games can be started"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        game.status = Game.Status.ACTIVE
+        game.started_at = timezone.now()
+        game.save(update_fields=["status", "started_at"])
+
+        return Response(
+            {
+                "game_code": game.game_code,
+                "status": game.status,
+                "started_at": game.started_at,
+            }
+        )
+
+
+class GameNextCallView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Games"])
+    def post(self, request, code: str):
+        game = get_object_or_404(Game, game_code=code, shop=request.user)
+
+        if game.status != Game.Status.ACTIVE:
+            return Response(
+                {"detail": "Game must be active before calling numbers"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if game.call_cursor >= len(game.draw_sequence):
+            return Response(
+                {
+                    "game_code": game.game_code,
+                    "is_complete": True,
+                    "called_numbers": game.called_numbers,
+                    "current_called_number": game.current_called_number,
+                    "current_called_formatted": _format_called_number(game.current_called_number)
+                    if game.current_called_number
+                    else None,
+                }
+            )
+
+        called_numbers = list(game.called_numbers)
+
+        next_number = game.draw_sequence[game.call_cursor]
+        called_numbers.append(next_number)
+        game.called_numbers = called_numbers
+        game.call_cursor += 1
+        game.current_called_number = next_number
+        game.save(update_fields=["called_numbers", "call_cursor", "current_called_number"])
+
+        return Response(
+            {
+                "game_code": game.game_code,
+                "called_number": next_number,
+                "called_formatted": _format_called_number(next_number),
+                "called_numbers": game.called_numbers,
+                "call_cursor": game.call_cursor,
+                "is_complete": game.call_cursor >= len(game.draw_sequence),
+            }
+        )
 
 
 class GameCartellaDrawView(APIView):
@@ -344,6 +514,64 @@ class ShopBingoSessionConfirmPaymentView(APIView):
         if game:
             response["game"] = GameSerializer(game).data
         return Response(response)
+
+
+class ShopBingoSessionCreateGameView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Games"])
+    def post(self, request, session_id: str):
+        with db_transaction.atomic():
+            session = ShopBingoSession.objects.select_for_update().get(
+                session_id=session_id, shop=request.user
+            )
+
+            if session.game_id:
+                return Response(
+                    {
+                        "session": ShopBingoSessionSerializer(session).data,
+                        "game_created": True,
+                        "game": GameSerializer(session.game).data,
+                    }
+                )
+
+            players = list(session.players_data)
+            if len(players) != session.fixed_players:
+                return Response(
+                    {
+                        "detail": f"Exactly {session.fixed_players} players are required before game creation"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            for idx, player in enumerate(players):
+                if not player.get("cartella_numbers"):
+                    return Response(
+                        {"detail": f"Player {player.get('player_name') or idx + 1} has no cartellas selected"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                if not bool(player.get("paid")):
+                    players[idx]["paid"] = True
+                    players[idx]["paid_at"] = timezone.now().isoformat()
+
+            session.players_data = players
+            locked, total_payable = _recalculate_session_totals(session)
+            session.locked_cartellas = locked
+            session.total_payable = total_payable
+            session.save(update_fields=["players_data", "locked_cartellas", "total_payable", "updated_at"])
+
+            try:
+                game = _finalize_shop_session(session)
+            except ValueError as exc:
+                return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            {
+                "session": ShopBingoSessionSerializer(session).data,
+                "game_created": True,
+                "game": GameSerializer(game).data,
+            }
+        )
 
 
 class PublicGameCartellaView(APIView):

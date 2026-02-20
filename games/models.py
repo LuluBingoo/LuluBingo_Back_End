@@ -26,6 +26,9 @@ class Game(models.Model):
     cartella_numbers = models.JSONField(default=list)  # list of cartella number lists
     cartella_draw_sequences = models.JSONField(default=list)  # per-cartella shuffled draw order
     draw_sequence = models.JSONField(default=list)  # master shuffled draw order
+    called_numbers = models.JSONField(default=list, blank=True)
+    call_cursor = models.PositiveSmallIntegerField(default=0)
+    current_called_number = models.PositiveSmallIntegerField(null=True, blank=True)
     game_mode = models.CharField(max_length=20, choices=Mode.choices, default=Mode.STANDARD)
     cartella_number_map = models.JSONField(default=dict, blank=True)  # cartellaNumber(string)->index
     shop_players_data = models.JSONField(default=list, blank=True)
@@ -68,6 +71,8 @@ class Game(models.Model):
             self.draw_sequence = random.sample(range(1, 76), 75)
         if not self.cartella_draw_sequences:
             self.cartella_draw_sequences = [random.sample(range(1, 76), 75) for _ in self.cartella_numbers]
+        if self.called_numbers is None:
+            self.called_numbers = []
 
     def save(self, *args, **kwargs):
         self._ensure_game_code()
