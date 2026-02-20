@@ -95,6 +95,21 @@ class LoginView(APIView):
         )
 
 
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={200: OpenApiResponse(description="Token invalidated")},
+        tags=["Authentication"],
+    )
+    def post(self, request):
+        try:
+            request.user.auth_token.delete()
+        except (AttributeError, Token.DoesNotExist):
+            pass
+        return Response({"detail": "Successfully logged out."})
+
+
 class MeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

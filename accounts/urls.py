@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     ChangePasswordView,
     LoginView,
+    LogoutView,
     MeView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
@@ -14,6 +15,7 @@ from .views import (
 
 urlpatterns = [
     path("auth/login", LoginView.as_view(), name="login"),
+    path("auth/logout", LogoutView.as_view(), name="logout"),
     path("auth/me", MeView.as_view(), name="me"),
     path("auth/password/change", ChangePasswordView.as_view(), name="password-change"),
     path("auth/password/forgot", PasswordResetRequestView.as_view(), name="password-forgot"),
