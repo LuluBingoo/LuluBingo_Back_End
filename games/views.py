@@ -108,6 +108,13 @@ def _board_matches_pattern(
     return False
 
 
+def _detect_winning_pattern(board: list[int], called_set: set[int]) -> str | None:
+    for candidate in ("row", "column", "diagonal"):
+        if _board_matches_pattern(board, called_set, candidate):
+            return candidate
+    return None
+
+
 def _resolve_game_financials(game: Game) -> tuple[Decimal, Decimal, Decimal]:
     total_pool = (
         game.total_pool
@@ -463,7 +470,8 @@ class GameClaimView(APIView):
             game = get_object_or_404(Game.objects.select_for_update(), game_code=code, shop=request.user)
 
             cartella_index = request.data.get("cartella_index")
-            pattern = str(request.data.get("pattern", "row")).strip().lower()
+            pattern_raw = request.data.get("pattern")
+            pattern = str(pattern_raw).strip().lower() if pattern_raw is not None else ""
 
             if game.status != Game.Status.ACTIVE:
                 return Response(
@@ -485,7 +493,7 @@ class GameClaimView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if pattern not in ALLOWED_CLAIM_PATTERNS:
+            if pattern and pattern not in ALLOWED_CLAIM_PATTERNS:
                 return Response(
                     {"detail": "pattern must be one of: row, column, diagonal"},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -502,17 +510,19 @@ class GameClaimView(APIView):
                         "status": game.status,
                         "detail": "Cartella is banned for this game",
                     },
-                    status=status.HTTP_400_BAD_REQUEST,
+                    status=status.HTTP_200_OK,
                 )
 
             called_numbers = set(game.called_numbers or [])
             board = game.cartella_numbers[cartella_index]
-            is_winner = _board_matches_pattern(board, called_numbers, pattern)
+            detected_pattern = _detect_winning_pattern(board, called_numbers)
+            selected_pattern = pattern or detected_pattern or "row"
+            is_winner = bool(detected_pattern) if not pattern else _board_matches_pattern(board, called_numbers, pattern)
 
             claim_log = list(game.awarded_claims or [])
             claim_event = {
                 "cartella_index": cartella_index,
-                "pattern": pattern,
+                "pattern": selected_pattern,
                 "called_count": len(called_numbers),
                 "time": timezone.now().isoformat(),
                 "result": "win" if is_winner else "false_claim",
@@ -529,7 +539,7 @@ class GameClaimView(APIView):
                     {
                         "game_code": game.game_code,
                         "cartella_index": cartella_index,
-                        "pattern": pattern,
+                        "pattern": selected_pattern,
                         "is_bingo": False,
                         "is_banned": True,
                         "status": game.status,
@@ -554,7 +564,7 @@ class GameClaimView(APIView):
                         "payout_amount": str(payout_amount),
                         "shop_cut": str(shop_cut),
                         "winner_cartella_index": cartella_index,
-                        "pattern": pattern,
+                        "pattern": selected_pattern,
                     },
                 )
 
@@ -569,7 +579,7 @@ class GameClaimView(APIView):
 
             game.status = Game.Status.COMPLETED
             game.winners = [cartella_index]
-            game.winning_pattern = pattern
+            game.winning_pattern = selected_pattern
             game.total_pool = total_pool
             game.payout_amount = payout_amount
             game.shop_cut_amount = shop_cut
@@ -594,7 +604,7 @@ class GameClaimView(APIView):
                 {
                     "game_code": game.game_code,
                     "cartella_index": cartella_index,
-                    "pattern": pattern,
+                    "pattern": selected_pattern,
                     "is_bingo": True,
                     "is_banned": False,
                     "status": game.status,
