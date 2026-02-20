@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from urllib.parse import urlparse, parse_qsl
 
 # --------------------------------------------------
 # Base
@@ -33,6 +34,19 @@ ALLOWED_HOSTS = [
 
 
 # --------------------------------------------------
+# CORS
+# --------------------------------------------------
+
+CORS_ALLOW_ALL_ORIGINS = str_to_bool(os.getenv("CORS_ALLOW_ALL_ORIGINS"), default=False)
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    if origin.strip()
+]
+CORS_ALLOW_CREDENTIALS = str_to_bool(os.getenv("CORS_ALLOW_CREDENTIALS"), default=True)
+
+
+# --------------------------------------------------
 # Applications
 # --------------------------------------------------
 
@@ -45,6 +59,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     # Third-party
+    "corsheaders",
     "rest_framework",
     "rest_framework.authtoken",
     "drf_spectacular",
@@ -62,6 +77,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -100,21 +116,25 @@ WSGI_APPLICATION = "lulu_bingo.wsgi.application"
 # --------------------------------------------------
 
 if ENVIRONMENT == "production":
-    required = ["DB_NAME", "DB_USER", "DB_PASSWORD"]
+    required = ["DATABASE_URL"]
     missing = [key for key in required if not os.getenv(key)]
+    
     if missing:
         raise ValueError(
             f"Missing database env vars for production: {', '.join(missing)}"
         )
+    
+    tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
 
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("DB_NAME"),
-            "USER": os.getenv("DB_USER"),
-            "PASSWORD": os.getenv("DB_PASSWORD"),
-            "HOST": os.getenv("DB_HOST", "localhost"),
-            "PORT": os.getenv("DB_PORT", "5432"),
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': tmpPostgres.path.replace('/', ''),
+            'USER': tmpPostgres.username,
+            'PASSWORD': tmpPostgres.password,
+            'HOST': tmpPostgres.hostname,
+            'PORT': 5432,
+            'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
         }
     }
 else:

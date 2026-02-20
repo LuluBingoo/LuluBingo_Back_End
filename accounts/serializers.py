@@ -131,13 +131,15 @@ class ShopProfileSerializer(serializers.ModelSerializer):
             "wallet_balance",
             "commission_rate",
             "max_stake",
-            "feature_flags",
             "two_factor_enabled",
             "two_factor_method",
             "created_at",
         ]
 
     def validate(self, attrs):
+        if attrs and set(attrs.keys()) <= {"feature_flags"}:
+            return attrs
+
         instance = self.instance or ShopUser()
         errors: dict[str, str] = {}
         required_fields = [
@@ -156,9 +158,21 @@ class ShopProfileSerializer(serializers.ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
+        profile_completion_fields = {
+            "name",
+            "contact_phone",
+            "contact_email",
+            "bank_name",
+            "bank_account_name",
+            "bank_account_number",
+        }
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        instance.profile_completed = True
+
+        if profile_completion_fields.intersection(validated_data.keys()):
+            instance.profile_completed = True
+
         instance.save()
         return instance
 
