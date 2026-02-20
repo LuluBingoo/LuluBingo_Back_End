@@ -27,7 +27,7 @@ from .serializers import (
 
 ALLOWED_GAME_STATUS_FILTERS = {choice[0] for choice in Game.Status.choices}
 ALLOWED_TX_TYPE_FILTERS = {choice[0] for choice in Transaction.Type.choices}
-ALLOWED_CLAIM_PATTERNS = {"row", "column", "diagonal"}
+ALLOWED_CLAIM_PATTERNS = {"row", "diagonal"}
 
 
 def _generate_cartella_board() -> list[int]:
@@ -94,12 +94,6 @@ def _board_matches_pattern(
     if normalized == "row":
         return any(all(is_marked(value) for value in row) for row in grid)
 
-    if normalized == "column":
-        for col in range(5):
-            if all(is_marked(grid[row][col]) for row in range(5)):
-                return True
-        return False
-
     if normalized == "diagonal":
         main = all(is_marked(grid[idx][idx]) for idx in range(5))
         anti = all(is_marked(grid[idx][4 - idx]) for idx in range(5))
@@ -109,10 +103,30 @@ def _board_matches_pattern(
 
 
 def _detect_winning_pattern(board: list[int], called_set: set[int]) -> str | None:
-    for candidate in ("row", "column", "diagonal"):
+    for candidate in ("row", "diagonal"):
         if _board_matches_pattern(board, called_set, candidate):
             return candidate
     return None
+
+
+def _ensure_cartella_statuses(game: Game) -> dict[str, str]:
+    total_cartellas = len(game.cartella_numbers or [])
+    statuses: dict[str, str] = {
+        str(index): "active" for index in range(total_cartellas)
+    }
+
+    if isinstance(game.cartella_statuses, dict):
+        for key, value in game.cartella_statuses.items():
+            if str(value) in {"active", "banned", "winner"}:
+                statuses[str(key)] = str(value)
+
+    for banned_index in game.banned_cartellas or []:
+        statuses[str(banned_index)] = "banned"
+
+    for winner_index in game.winners or []:
+        statuses[str(winner_index)] = "winner"
+
+    return statuses
 
 
 def _resolve_game_financials(game: Game) -> tuple[Decimal, Decimal, Decimal]:
@@ -201,6 +215,7 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
             current_called_number=None,
             started_at=None,
             banned_cartellas=[],
+            cartella_statuses={str(index): "active" for index in range(len(cartella_boards))},
             awarded_claims=[],
             winning_pattern="",
         )
@@ -269,6 +284,7 @@ class GameStateView(APIView):
                 "call_cursor",
                 "current_called_number",
                 "called_numbers",
+                "cartella_statuses",
             ),
             game_code=code,
             shop=request.user,
@@ -285,6 +301,7 @@ class GameStateView(APIView):
                 if current_number
                 else None,
                 "called_numbers": game.called_numbers,
+                "cartella_statuses": game.cartella_statuses,
             }
         )
 
@@ -495,20 +512,27 @@ class GameClaimView(APIView):
 
             if pattern and pattern not in ALLOWED_CLAIM_PATTERNS:
                 return Response(
-                    {"detail": "pattern must be one of: row, column, diagonal"},
+                    {"detail": "pattern must be one of: row, diagonal"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            cartella_statuses = _ensure_cartella_statuses(game)
+
             banned = set(game.banned_cartellas or [])
             if cartella_index in banned:
+                cartella_statuses[str(cartella_index)] = "banned"
+                game.cartella_statuses = cartella_statuses
+                game.save(update_fields=["cartella_statuses"])
                 return Response(
                     {
                         "game_code": game.game_code,
                         "cartella_index": cartella_index,
                         "is_bingo": False,
                         "is_banned": True,
+                        "cartella_status": "banned",
+                        "cartella_statuses": cartella_statuses,
                         "status": game.status,
-                        "detail": "Cartella is banned for this game",
+                        "detail": "Banned.",
                     },
                     status=status.HTTP_200_OK,
                 )
@@ -531,9 +555,11 @@ class GameClaimView(APIView):
             if not is_winner:
                 banned.add(cartella_index)
                 game.banned_cartellas = sorted(banned)
+                cartella_statuses[str(cartella_index)] = "banned"
+                game.cartella_statuses = cartella_statuses
                 claim_log.append(claim_event)
                 game.awarded_claims = claim_log
-                game.save(update_fields=["banned_cartellas", "awarded_claims"])
+                game.save(update_fields=["banned_cartellas", "cartella_statuses", "awarded_claims"])
 
                 return Response(
                     {
@@ -542,9 +568,11 @@ class GameClaimView(APIView):
                         "pattern": selected_pattern,
                         "is_bingo": False,
                         "is_banned": True,
+                        "cartella_status": "banned",
+                        "cartella_statuses": cartella_statuses,
                         "status": game.status,
                         "called_numbers": game.called_numbers,
-                        "detail": "False claim: cartella is banned for this game",
+                        "detail": "Banned.",
                     },
                     status=status.HTTP_200_OK,
                 )
@@ -579,6 +607,8 @@ class GameClaimView(APIView):
 
             game.status = Game.Status.COMPLETED
             game.winners = [cartella_index]
+            cartella_statuses[str(cartella_index)] = "winner"
+            game.cartella_statuses = cartella_statuses
             game.winning_pattern = selected_pattern
             game.total_pool = total_pool
             game.payout_amount = payout_amount
@@ -590,6 +620,7 @@ class GameClaimView(APIView):
                 update_fields=[
                     "status",
                     "winners",
+                    "cartella_statuses",
                     "winning_pattern",
                     "total_pool",
                     "payout_amount",
@@ -607,6 +638,8 @@ class GameClaimView(APIView):
                     "pattern": selected_pattern,
                     "is_bingo": True,
                     "is_banned": False,
+                    "cartella_status": "winner",
+                    "cartella_statuses": cartella_statuses,
                     "status": game.status,
                     "winner": cartella_index,
                     "total_pool": str(total_pool),

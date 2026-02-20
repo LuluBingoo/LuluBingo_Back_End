@@ -34,6 +34,7 @@ class GameSerializer(serializers.ModelSerializer):
             "status",
             "winners",
             "banned_cartellas",
+            "cartella_statuses",
             "awarded_claims",
             "total_pool",
             "win_percentage",
@@ -87,6 +88,7 @@ class GameCreateSerializer(serializers.ModelSerializer):
                     num_players=validated_data["num_players"],
                     win_amount=validated_data["win_amount"],
                     cartella_numbers=cartellas,
+                    cartella_statuses={str(index): "active" for index in range(len(cartellas))},
                     status=Game.Status.ACTIVE,
                     started_at=timezone.now(),
                 )

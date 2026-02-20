@@ -36,6 +36,7 @@ class Game(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     winners = models.JSONField(default=list, blank=True)  # indices of winning cartella(s)
     banned_cartellas = models.JSONField(default=list, blank=True)  # banned cartella indexes
+    cartella_statuses = models.JSONField(default=dict, blank=True)  # cartella index -> active|banned|winner
     awarded_claims = models.JSONField(default=list, blank=True)  # successful and failed claim events
     total_pool = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     win_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=90)
