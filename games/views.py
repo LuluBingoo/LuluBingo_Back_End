@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 import random
 
 from django.shortcuts import get_object_or_404
@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from transactions.models import Transaction
-from transactions.services import apply_transaction, TransactionError
+from transactions.services import apply_transaction
 
 from .models import Game, ShopBingoSession
 from .serializers import (
@@ -25,6 +25,11 @@ from .serializers import (
 )
 
 
+ALLOWED_GAME_STATUS_FILTERS = {choice[0] for choice in Game.Status.choices}
+ALLOWED_TX_TYPE_FILTERS = {choice[0] for choice in Transaction.Type.choices}
+ALLOWED_CLAIM_PATTERNS = {"row", "column", "diagonal"}
+
+
 def _generate_cartella_board() -> list[int]:
     numbers: list[int] = []
     ranges = [(1, 15), (16, 30), (31, 45), (46, 60), (61, 75)]
@@ -36,13 +41,17 @@ def _generate_cartella_board() -> list[int]:
 
 
 def _generate_unique_cartella_boards(count: int) -> list[list[int]]:
+    if count <= 0:
+        return []
+
     boards: list[list[int]] = []
     signatures: set[tuple[int, ...]] = set()
     attempts = 0
+    max_attempts = max(count * 400, 400)
 
     while len(boards) < count:
         attempts += 1
-        if attempts > count * 2000:
+        if attempts > max_attempts:
             raise ValueError("Failed to generate unique cartella boards")
 
         board = _generate_cartella_board()
@@ -68,12 +77,70 @@ def _format_called_number(number: int) -> str:
     return f"O{number}"
 
 
+def _board_matches_pattern(
+    board: list[int],
+    called_set: set[int],
+    pattern: str,
+) -> bool:
+    normalized = pattern.strip().lower()
+    if len(board) != 25:
+        return False
+
+    def is_marked(value: int) -> bool:
+        return value == 0 or value in called_set
+
+    grid = [board[idx : idx + 5] for idx in range(0, 25, 5)]
+
+    if normalized == "row":
+        return any(all(is_marked(value) for value in row) for row in grid)
+
+    if normalized == "column":
+        for col in range(5):
+            if all(is_marked(grid[row][col]) for row in range(5)):
+                return True
+        return False
+
+    if normalized == "diagonal":
+        main = all(is_marked(grid[idx][idx]) for idx in range(5))
+        anti = all(is_marked(grid[idx][4 - idx]) for idx in range(5))
+        return main or anti
+
+    return False
+
+
+def _resolve_game_financials(game: Game) -> tuple[Decimal, Decimal, Decimal]:
+    total_pool = (
+        game.total_pool
+        if game.total_pool and game.total_pool > 0
+        else game.bet_amount * Decimal(len(game.cartella_numbers))
+    )
+
+    win_percentage = Decimal(str(game.win_percentage or Decimal("90")))
+    payout_amount = (total_pool * win_percentage / Decimal("100")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    shop_cut = (total_pool - payout_amount).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    return total_pool, payout_amount, shop_cut
+
+
 def _recalculate_session_totals(session: ShopBingoSession) -> tuple[list[int], Decimal]:
-    locked = sorted({n for p in session.players_data for n in p.get("cartella_numbers", [])})
+    locked_set: set[int] = set()
     total = Decimal("0")
+
     for player in session.players_data:
-        total += Decimal(str(player.get("total_bet", "0")))
-    return locked, total
+        cartellas = player.get("cartella_numbers", []) or []
+        locked_set.update(cartellas)
+
+        total_bet = player.get("total_bet")
+        if total_bet in (None, ""):
+            bet_per_cartella = Decimal(str(player.get("bet_per_cartella", "0") or "0"))
+            total += bet_per_cartella * Decimal(len(cartellas))
+        else:
+            total += Decimal(str(total_bet))
+
+    return sorted(locked_set), total
 
 
 def _finalize_shop_session(session: ShopBingoSession) -> Game:
@@ -95,6 +162,17 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
     cartella_boards = _generate_unique_cartella_boards(len(all_cartella_numbers))
     cartella_map = {str(cartella_number): index for index, cartella_number in enumerate(all_cartella_numbers)}
 
+    win_percentage = Decimal(
+        str(
+            session.shop.feature_flags.get("win_percentage", 90)
+            if isinstance(session.shop.feature_flags, dict)
+            else 90
+        )
+    )
+    total_pool = session.total_payable
+    if total_pool <= 0:
+        raise ValueError("Session total payable must be greater than zero before game creation")
+
     with db_transaction.atomic():
         game = Game.objects.create(
             shop=session.shop,
@@ -103,6 +181,10 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
             min_bet_per_cartella=session.min_bet_per_cartella,
             num_players=4,
             win_amount=session.total_payable,
+            total_pool=total_pool,
+            win_percentage=win_percentage,
+            payout_amount=Decimal("0"),
+            shop_cut_amount=Decimal("0"),
             cartella_numbers=cartella_boards,
             cartella_number_map=cartella_map,
             shop_players_data=players,
@@ -111,25 +193,10 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
             call_cursor=0,
             current_called_number=None,
             started_at=None,
+            banned_cartellas=[],
+            awarded_claims=[],
+            winning_pattern="",
         )
-
-        try:
-            apply_transaction(
-                user=session.shop,
-                amount=session.total_payable,
-                tx_type=Transaction.Type.BET_DEBIT,
-                reference=f"game:{game.game_code}:shop_lobby_bet",
-                metadata={
-                    "event": "shop_mode_bet_debit",
-                    "session_id": session.session_id,
-                    "players": players,
-                    "cartella_count": len(all_cartella_numbers),
-                    "min_bet_per_cartella": str(session.min_bet_per_cartella),
-                },
-            )
-        except TransactionError as exc:
-            raise ValueError(str(exc)) from exc
-
         game.bet_debited_at = timezone.now()
         game.save(update_fields=["bet_debited_at"])
 
@@ -187,7 +254,18 @@ class GameStateView(APIView):
 
     @extend_schema(tags=["Games"])
     def get(self, request, code: str):
-        game = get_object_or_404(Game, game_code=code, shop=request.user)
+        game = get_object_or_404(
+            Game.objects.only(
+                "game_code",
+                "status",
+                "started_at",
+                "call_cursor",
+                "current_called_number",
+                "called_numbers",
+            ),
+            game_code=code,
+            shop=request.user,
+        )
         current_number = game.current_called_number
         return Response(
             {
@@ -209,7 +287,18 @@ class GameShuffleView(APIView):
 
     @extend_schema(tags=["Games"])
     def post(self, request, code: str):
-        game = get_object_or_404(Game, game_code=code, shop=request.user)
+        game = get_object_or_404(
+            Game.objects.only(
+                "game_code",
+                "status",
+                "draw_sequence",
+                "called_numbers",
+                "call_cursor",
+                "current_called_number",
+            ),
+            game_code=code,
+            shop=request.user,
+        )
 
         if game.status != Game.Status.PENDING:
             return Response(
@@ -244,7 +333,11 @@ class GameStartView(APIView):
 
     @extend_schema(tags=["Games"])
     def post(self, request, code: str):
-        game = get_object_or_404(Game, game_code=code, shop=request.user)
+        game = get_object_or_404(
+            Game.objects.only("game_code", "status", "started_at"),
+            game_code=code,
+            shop=request.user,
+        )
 
         if game.status == Game.Status.ACTIVE:
             return Response({"detail": "Game already started"}, status=status.HTTP_200_OK)
@@ -273,7 +366,18 @@ class GameNextCallView(APIView):
 
     @extend_schema(tags=["Games"])
     def post(self, request, code: str):
-        game = get_object_or_404(Game, game_code=code, shop=request.user)
+        game = get_object_or_404(
+            Game.objects.only(
+                "game_code",
+                "status",
+                "draw_sequence",
+                "called_numbers",
+                "call_cursor",
+                "current_called_number",
+            ),
+            game_code=code,
+            shop=request.user,
+        )
 
         if game.status != Game.Status.ACTIVE:
             return Response(
@@ -355,20 +459,153 @@ class GameClaimView(APIView):
 
     @extend_schema(request=GameClaimSerializer, tags=["Games"])
     def post(self, request, code: str):
-        game = get_object_or_404(Game, game_code=code, shop=request.user)
-        serializer = GameClaimSerializer(data=request.data, context={"game": game})
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-        return Response(
-            {
-                "game_code": game.game_code,
-                "cartella_index": data["cartella_index"],
-                "is_bingo": data["is_bingo"],
-                "matched_count": data["matched_count"],
-                "required_count": data["required_count"],
-                "missing_numbers": data["missing_numbers"],
+        with db_transaction.atomic():
+            game = get_object_or_404(Game.objects.select_for_update(), game_code=code, shop=request.user)
+
+            cartella_index = request.data.get("cartella_index")
+            pattern = str(request.data.get("pattern", "row")).strip().lower()
+
+            if game.status != Game.Status.ACTIVE:
+                return Response(
+                    {"detail": "Claims are only allowed for active games"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                cartella_index = int(cartella_index)
+            except (TypeError, ValueError):
+                return Response(
+                    {"detail": "cartella_index must be an integer"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if cartella_index < 0 or cartella_index >= len(game.cartella_numbers):
+                return Response(
+                    {"detail": "Cartella index out of range"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if pattern not in ALLOWED_CLAIM_PATTERNS:
+                return Response(
+                    {"detail": "pattern must be one of: row, column, diagonal"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            banned = set(game.banned_cartellas or [])
+            if cartella_index in banned:
+                return Response(
+                    {
+                        "game_code": game.game_code,
+                        "cartella_index": cartella_index,
+                        "is_bingo": False,
+                        "is_banned": True,
+                        "status": game.status,
+                        "detail": "Cartella is banned for this game",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            called_numbers = set(game.called_numbers or [])
+            board = game.cartella_numbers[cartella_index]
+            is_winner = _board_matches_pattern(board, called_numbers, pattern)
+
+            claim_log = list(game.awarded_claims or [])
+            claim_event = {
+                "cartella_index": cartella_index,
+                "pattern": pattern,
+                "called_count": len(called_numbers),
+                "time": timezone.now().isoformat(),
+                "result": "win" if is_winner else "false_claim",
             }
-        )
+
+            if not is_winner:
+                banned.add(cartella_index)
+                game.banned_cartellas = sorted(banned)
+                claim_log.append(claim_event)
+                game.awarded_claims = claim_log
+                game.save(update_fields=["banned_cartellas", "awarded_claims"])
+
+                return Response(
+                    {
+                        "game_code": game.game_code,
+                        "cartella_index": cartella_index,
+                        "pattern": pattern,
+                        "is_bingo": False,
+                        "is_banned": True,
+                        "status": game.status,
+                        "called_numbers": game.called_numbers,
+                        "detail": "False claim: cartella is banned for this game",
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            total_pool, payout_amount, shop_cut = _resolve_game_financials(game)
+
+            if shop_cut > 0:
+                apply_transaction(
+                    user=game.shop,
+                    amount=shop_cut,
+                    tx_type=Transaction.Type.BET_CREDIT,
+                    reference=f"game:{game.game_code}:shop_cut",
+                    metadata={
+                        "event": "bingo_shop_cut_credit",
+                        "game_id": game.game_code,
+                        "total_pool": str(total_pool),
+                        "payout_amount": str(payout_amount),
+                        "shop_cut": str(shop_cut),
+                        "winner_cartella_index": cartella_index,
+                        "pattern": pattern,
+                    },
+                )
+
+            claim_event.update(
+                {
+                    "total_pool": str(total_pool),
+                    "payout_amount": str(payout_amount),
+                    "shop_cut_amount": str(shop_cut),
+                }
+            )
+            claim_log.append(claim_event)
+
+            game.status = Game.Status.COMPLETED
+            game.winners = [cartella_index]
+            game.winning_pattern = pattern
+            game.total_pool = total_pool
+            game.payout_amount = payout_amount
+            game.shop_cut_amount = shop_cut
+            game.ended_at = game.ended_at or timezone.now()
+            game.awarded_claims = claim_log
+            game.call_cursor = len(game.draw_sequence)
+            game.save(
+                update_fields=[
+                    "status",
+                    "winners",
+                    "winning_pattern",
+                    "total_pool",
+                    "payout_amount",
+                    "shop_cut_amount",
+                    "ended_at",
+                    "awarded_claims",
+                    "call_cursor",
+                ]
+            )
+
+            return Response(
+                {
+                    "game_code": game.game_code,
+                    "cartella_index": cartella_index,
+                    "pattern": pattern,
+                    "is_bingo": True,
+                    "is_banned": False,
+                    "status": game.status,
+                    "winner": cartella_index,
+                    "total_pool": str(total_pool),
+                    "payout_amount": str(payout_amount),
+                    "shop_cut_amount": str(shop_cut),
+                    "detail": "Bingo confirmed. Game completed.",
+                },
+                status=status.HTTP_200_OK,
+            )
 
 
 class ShopBingoSessionCreateView(APIView):
@@ -409,7 +646,11 @@ class ShopBingoSessionReserveView(APIView):
         bet_per_cartella = serializer.validated_data["bet_per_cartella"]
 
         with db_transaction.atomic():
-            session = ShopBingoSession.objects.select_for_update().get(session_id=session_id, shop=request.user)
+            session = get_object_or_404(
+                ShopBingoSession.objects.select_for_update(),
+                session_id=session_id,
+                shop=request.user,
+            )
 
             if session.status != ShopBingoSession.Status.WAITING:
                 return Response({"detail": "Session is no longer open"}, status=status.HTTP_400_BAD_REQUEST)
@@ -434,9 +675,12 @@ class ShopBingoSessionReserveView(APIView):
                 if idx != player_index
                 for n in player.get("cartella_numbers", [])
             }
-            duplicates = [n for n in cartella_numbers if n in taken_by_others]
-            if duplicates:
-                return Response({"detail": f"Cartellas already taken: {sorted(set(duplicates))}"}, status=status.HTTP_400_BAD_REQUEST)
+            duplicate_set = set(cartella_numbers).intersection(taken_by_others)
+            if duplicate_set:
+                return Response(
+                    {"detail": f"Cartellas already taken: {sorted(duplicate_set)}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             player_total = bet_per_cartella * Decimal(len(cartella_numbers))
             payload = {
@@ -478,7 +722,11 @@ class ShopBingoSessionConfirmPaymentView(APIView):
         player_name = serializer.validated_data["player_name"]
 
         with db_transaction.atomic():
-            session = ShopBingoSession.objects.select_for_update().get(session_id=session_id, shop=request.user)
+            session = get_object_or_404(
+                ShopBingoSession.objects.select_for_update(),
+                session_id=session_id,
+                shop=request.user,
+            )
             players = list(session.players_data)
 
             player_index = next(
@@ -522,8 +770,10 @@ class ShopBingoSessionCreateGameView(APIView):
     @extend_schema(tags=["Games"])
     def post(self, request, session_id: str):
         with db_transaction.atomic():
-            session = ShopBingoSession.objects.select_for_update().get(
-                session_id=session_id, shop=request.user
+            session = get_object_or_404(
+                ShopBingoSession.objects.select_for_update(),
+                session_id=session_id,
+                shop=request.user,
             )
 
             if session.game_id:
@@ -545,11 +795,17 @@ class ShopBingoSessionCreateGameView(APIView):
                 )
 
             for idx, player in enumerate(players):
-                if not player.get("cartella_numbers"):
+                cartellas = player.get("cartella_numbers") or []
+                if not cartellas:
                     return Response(
                         {"detail": f"Player {player.get('player_name') or idx + 1} has no cartellas selected"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
+
+                if player.get("total_bet") in (None, ""):
+                    bet_per_cartella = Decimal(str(player.get("bet_per_cartella", "0") or "0"))
+                    players[idx]["total_bet"] = str(bet_per_cartella * Decimal(len(cartellas)))
+
                 if not bool(player.get("paid")):
                     players[idx]["paid"] = True
                     players[idx]["paid_at"] = timezone.now().isoformat()
@@ -600,5 +856,132 @@ class PublicGameCartellaView(APIView):
                 "cartella_draw_sequence": game.cartella_draw_sequences[cartella_index],
                 "status": game.status,
                 "created_at": game.created_at,
+            }
+        )
+
+
+class GameAuditReportView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Games"])
+    def get(self, request):
+        search = (request.query_params.get("search") or "").strip().lower()
+        status_filter = (request.query_params.get("status") or "").strip().lower()
+        tx_type_filter = (request.query_params.get("tx_type") or "").strip().lower()
+
+        games = Game.objects.filter(shop=request.user)
+        if status_filter in ALLOWED_GAME_STATUS_FILTERS:
+            games = games.filter(status=status_filter)
+
+        games = games.values(
+            "game_code",
+            "created_at",
+            "ended_at",
+            "num_players",
+            "total_pool",
+            "shop_cut_amount",
+            "status",
+            "winners",
+            "winning_pattern",
+            "payout_amount",
+            "banned_cartellas",
+        ).order_by("-created_at")
+
+        game_history = []
+        win_history = []
+        banned_list = []
+
+        for game in games.iterator(chunk_size=200):
+            winner_indexes = game.get("winners") or []
+            winner_labels = [f"Cartella {idx}" for idx in winner_indexes]
+
+            history_item = {
+                "game_id": game["game_code"],
+                "date": game["created_at"],
+                "players": game["num_players"],
+                "total_pool": str(game["total_pool"]),
+                "winner": winner_labels,
+                "shop_cut": str(game["shop_cut_amount"]),
+                "status": game["status"],
+            }
+
+            if search:
+                game_haystack = (
+                    f"{history_item['game_id']} {history_item['status']} "
+                    f"{' '.join(winner_labels)}"
+                ).lower()
+                if search not in game_haystack:
+                    continue
+
+            game_history.append(history_item)
+
+            if game["status"] == Game.Status.COMPLETED and winner_indexes:
+                win_history.append(
+                    {
+                        "game_id": game["game_code"],
+                        "winner_indexes": winner_indexes,
+                        "winning_pattern": game["winning_pattern"],
+                        "payout_amount": str(game["payout_amount"]),
+                        "date": game["ended_at"] or game["created_at"],
+                    }
+                )
+
+            for banned_idx in game.get("banned_cartellas") or []:
+                banned_list.append(
+                    {
+                        "game_id": game["game_code"],
+                        "cartella_index": banned_idx,
+                        "status": "banned",
+                        "date": game["ended_at"] or game["created_at"],
+                    }
+                )
+
+        transactions = Transaction.objects.filter(user=request.user)
+        if tx_type_filter in ALLOWED_TX_TYPE_FILTERS:
+            transactions = transactions.filter(tx_type=tx_type_filter)
+
+        transactions = transactions.values(
+            "id",
+            "tx_type",
+            "amount",
+            "balance_before",
+            "balance_after",
+            "reference",
+            "created_at",
+            "metadata",
+        ).order_by("-created_at")[:300]
+
+        tx_items = []
+        for tx in transactions:
+            metadata = tx.get("metadata") if isinstance(tx.get("metadata"), dict) else {}
+            reference = str(tx.get("reference") or "")
+            game_id_from_ref = reference.split(":", 2)[1] if ":" in reference else ""
+            item = {
+                "id": tx["id"],
+                "game_id": metadata.get("game_id") or game_id_from_ref,
+                "type": tx["tx_type"],
+                "amount": str(tx["amount"]),
+                "balance_before": str(tx["balance_before"]),
+                "balance_after": str(tx["balance_after"]),
+                "reference": reference,
+                "created_at": tx["created_at"],
+                "metadata": metadata,
+            }
+
+            if search:
+                tx_haystack = (
+                    f"{item['game_id']} {item['type']} {item['reference']}"
+                ).lower()
+                if search not in tx_haystack:
+                    continue
+
+            tx_items.append(item)
+
+        return Response(
+            {
+                "game_history": game_history,
+                "win_history": win_history,
+                "banned_cartellas": banned_list,
+                "transactions": tx_items,
             }
         )

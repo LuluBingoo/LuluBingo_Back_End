@@ -22,7 +22,10 @@ class Transaction(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        indexes = [models.Index(fields=["user", "-created_at"])]
+        indexes = [
+            models.Index(fields=["user", "-created_at"], name="transaction_user_id_386a11_idx"),
+            models.Index(fields=["user", "tx_type", "-created_at"], name="tx_user_type_created_idx"),
+        ]
 
     def __str__(self):
         return f"{self.tx_type} {self.amount} for {self.user.username}"

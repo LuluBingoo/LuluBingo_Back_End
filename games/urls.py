@@ -4,6 +4,7 @@ from .views import (
     GameCartellaDrawView,
     GameClaimView,
     GameCompleteView,
+    GameAuditReportView,
     GameDetailView,
     GameDrawView,
     GameNextCallView,
@@ -21,6 +22,7 @@ from .views import (
 
 urlpatterns = [
     path("games", GameListCreateView.as_view(), name="games"),
+    path("games/reports", GameAuditReportView.as_view(), name="game-reports"),
     path("games/shop-mode/sessions", ShopBingoSessionCreateView.as_view(), name="shop-mode-session-create"),
     path("games/shop-mode/sessions/<str:session_id>", ShopBingoSessionDetailView.as_view(), name="shop-mode-session-detail"),
     path("games/shop-mode/sessions/<str:session_id>/reserve", ShopBingoSessionReserveView.as_view(), name="shop-mode-session-reserve"),

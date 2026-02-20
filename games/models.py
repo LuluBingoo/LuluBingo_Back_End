@@ -35,6 +35,13 @@ class Game(models.Model):
     min_bet_per_cartella = models.DecimalField(max_digits=12, decimal_places=2, default=20)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     winners = models.JSONField(default=list, blank=True)  # indices of winning cartella(s)
+    banned_cartellas = models.JSONField(default=list, blank=True)  # banned cartella indexes
+    awarded_claims = models.JSONField(default=list, blank=True)  # successful and failed claim events
+    total_pool = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    win_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=90)
+    payout_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    shop_cut_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    winning_pattern = models.CharField(max_length=20, blank=True, default="")
     created_at = models.DateTimeField(default=timezone.now)
     started_at = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
@@ -44,6 +51,11 @@ class Game(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["shop", "-created_at"], name="games_game_shop_created_idx"),
+            models.Index(fields=["shop", "status", "-created_at"], name="g_game_shop_stat_created_idx"),
+            models.Index(fields=["shop", "game_code"], name="games_game_shop_code_idx"),
+        ]
 
     def __str__(self):
         return f"Game {self.game_code} ({self.shop.username})"
@@ -100,6 +112,10 @@ class ShopBingoSession(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["shop", "status", "-updated_at"], name="g_sess_shop_stat_updated_idx"),
+            models.Index(fields=["shop", "session_id"], name="games_session_shop_session_idx"),
+        ]
 
     def __str__(self):
         return f"{self.session_id} ({self.shop.username})"
