@@ -137,6 +137,8 @@ class LoginAttemptSerializer(serializers.ModelSerializer):
 class ChangePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True, min_length=8)
+    method = serializers.ChoiceField(choices=["totp", "email_code"], required=False)
+    otp = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     def validate_current_password(self, value):
         user = self.context["request"].user
@@ -148,6 +150,73 @@ class ChangePasswordSerializer(serializers.Serializer):
         if value.strip() == "":
             raise serializers.ValidationError("New password cannot be blank.")
         return value
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        user = self.context["request"].user
+
+        current_password = attrs.get("current_password", "")
+        new_password = attrs.get("new_password", "")
+        if current_password and new_password and current_password == new_password:
+            raise serializers.ValidationError({"new_password": "New password must be different from current password."})
+
+        if not getattr(user, "two_factor_enabled", False):
+            return attrs
+
+        enabled_methods = user.get_enabled_2fa_methods()
+        if not enabled_methods:
+            fallback_method = getattr(user, "two_factor_method", "totp") or "totp"
+            enabled_methods = [fallback_method]
+
+        selected_method = attrs.get("method")
+        if not selected_method:
+            preferred_method = getattr(user, "two_factor_method", None)
+            selected_method = preferred_method if preferred_method in enabled_methods else enabled_methods[0]
+
+        if selected_method not in enabled_methods:
+            raise serializers.ValidationError(
+                {
+                    "method": "Selected 2FA method is not enabled.",
+                    "two_factor_methods": enabled_methods,
+                }
+            )
+
+        otp = (attrs.get("otp") or "").strip()
+        if not otp:
+            raise serializers.ValidationError(
+                {
+                    "otp": "OTP code is required to change password.",
+                    "two_factor_method": selected_method,
+                    "two_factor_methods": enabled_methods,
+                }
+            )
+
+        otp_valid = False
+
+        if selected_method == "totp":
+            if not user.totp_secret:
+                raise serializers.ValidationError({"otp": "No TOTP secret is configured. Contact support."})
+            totp = pyotp.TOTP(user.totp_secret)
+            otp_valid = totp.verify(otp, valid_window=1)
+        elif selected_method == "email_code":
+            if not user.contact_email:
+                raise serializers.ValidationError({"otp": "No contact email configured for email-code verification."})
+            otp_valid = user.verify_email_2fa_code(otp)
+            if otp_valid:
+                user.clear_email_2fa_code()
+                user.save(update_fields=["two_factor_email_code", "two_factor_email_code_expires_at"])
+
+        if not otp_valid:
+            raise serializers.ValidationError(
+                {
+                    "otp": "Invalid or expired OTP.",
+                    "two_factor_method": selected_method,
+                    "two_factor_methods": enabled_methods,
+                }
+            )
+
+        attrs["method"] = selected_method
+        return attrs
 
 
 class AuthTokenResponseSerializer(serializers.Serializer):
@@ -374,7 +443,7 @@ class TwoFactorDisableSerializer(serializers.Serializer):
 
 
 class TwoFactorEmailCodeSerializer(serializers.Serializer):
-    purpose = serializers.ChoiceField(choices=["enable", "disable"])
+    purpose = serializers.ChoiceField(choices=["enable", "disable", "change_password"])
 
     def validate(self, attrs):
         user = self.context["request"].user
