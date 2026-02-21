@@ -296,3 +296,125 @@ class ShopBingoConfirmPaymentSerializer(serializers.Serializer):
         if not cleaned:
             raise serializers.ValidationError("Player name is required")
         return cleaned
+
+
+class DetailResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+
+
+class GameStateResponseSerializer(serializers.Serializer):
+    game_code = serializers.CharField()
+    status = serializers.ChoiceField(choices=Game.Status.choices)
+    started_at = serializers.DateTimeField(allow_null=True)
+    call_cursor = serializers.IntegerField()
+    current_called_number = serializers.IntegerField(allow_null=True)
+    current_called_formatted = serializers.CharField(allow_null=True)
+    called_numbers = serializers.ListField(child=serializers.IntegerField())
+    cartella_statuses = serializers.DictField(child=serializers.CharField(), required=False)
+
+
+class GameShuffleResponseSerializer(serializers.Serializer):
+    game_code = serializers.CharField()
+    status = serializers.ChoiceField(choices=Game.Status.choices)
+    message = serializers.CharField()
+
+
+class GameStartResponseSerializer(serializers.Serializer):
+    game_code = serializers.CharField()
+    status = serializers.ChoiceField(choices=Game.Status.choices)
+    started_at = serializers.DateTimeField(allow_null=True)
+
+
+class GameNextCallResponseSerializer(serializers.Serializer):
+    game_code = serializers.CharField()
+    called_number = serializers.IntegerField(required=False)
+    called_formatted = serializers.CharField(required=False)
+    called_numbers = serializers.ListField(child=serializers.IntegerField())
+    call_cursor = serializers.IntegerField(required=False)
+    current_called_number = serializers.IntegerField(required=False, allow_null=True)
+    current_called_formatted = serializers.CharField(required=False, allow_null=True)
+    is_complete = serializers.BooleanField()
+
+
+class GameCartellaDrawResponseSerializer(serializers.Serializer):
+    game_code = serializers.CharField()
+    cartella_number = serializers.IntegerField()
+    cartella_numbers = serializers.ListField(child=serializers.IntegerField())
+    cartella_draw_sequence = serializers.ListField(child=serializers.IntegerField())
+
+
+class GameClaimResponseSerializer(serializers.Serializer):
+    game_code = serializers.CharField()
+    cartella_index = serializers.IntegerField()
+    pattern = serializers.CharField(required=False)
+    is_bingo = serializers.BooleanField()
+    is_banned = serializers.BooleanField(required=False)
+    cartella_status = serializers.CharField(required=False)
+    cartella_statuses = serializers.DictField(child=serializers.CharField(), required=False)
+    status = serializers.ChoiceField(choices=Game.Status.choices, required=False)
+    winner = serializers.IntegerField(required=False)
+    total_pool = serializers.CharField(required=False)
+    payout_amount = serializers.CharField(required=False)
+    shop_cut_amount = serializers.CharField(required=False)
+    called_numbers = serializers.ListField(child=serializers.IntegerField(), required=False)
+    detail = serializers.CharField(required=False)
+
+
+class ShopBingoSessionGameResponseSerializer(serializers.Serializer):
+    session = ShopBingoSessionSerializer()
+    game_created = serializers.BooleanField()
+    game = GameSerializer(required=False)
+
+
+class PublicCartellaResponseSerializer(serializers.Serializer):
+    game_id = serializers.CharField()
+    cartella_number = serializers.IntegerField()
+    cartella_numbers = serializers.ListField(child=serializers.IntegerField())
+    cartella_draw_sequence = serializers.ListField(child=serializers.IntegerField())
+    status = serializers.ChoiceField(choices=Game.Status.choices)
+    called_numbers = serializers.ListField(child=serializers.IntegerField())
+    created_at = serializers.DateTimeField()
+
+
+class GameHistoryItemSerializer(serializers.Serializer):
+    game_id = serializers.CharField()
+    date = serializers.DateTimeField()
+    players = serializers.IntegerField()
+    total_pool = serializers.CharField()
+    winner = serializers.ListField(child=serializers.CharField())
+    shop_cut = serializers.CharField()
+    status = serializers.ChoiceField(choices=Game.Status.choices)
+
+
+class WinHistoryItemSerializer(serializers.Serializer):
+    game_id = serializers.CharField()
+    winner_indexes = serializers.ListField(child=serializers.IntegerField())
+    winning_pattern = serializers.CharField(allow_blank=True, allow_null=True)
+    payout_amount = serializers.CharField()
+    date = serializers.DateTimeField()
+
+
+class BannedCartellaItemSerializer(serializers.Serializer):
+    game_id = serializers.CharField()
+    cartella_index = serializers.IntegerField()
+    status = serializers.CharField()
+    date = serializers.DateTimeField()
+
+
+class ReportTransactionItemSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    game_id = serializers.CharField(allow_blank=True, allow_null=True)
+    type = serializers.CharField()
+    amount = serializers.CharField()
+    balance_before = serializers.CharField()
+    balance_after = serializers.CharField()
+    reference = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    metadata = serializers.DictField(required=False)
+
+
+class GameAuditReportResponseSerializer(serializers.Serializer):
+    game_history = GameHistoryItemSerializer(many=True)
+    win_history = WinHistoryItemSerializer(many=True)
+    banned_cartellas = BannedCartellaItemSerializer(many=True)
+    transactions = ReportTransactionItemSerializer(many=True)

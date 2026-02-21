@@ -5,7 +5,7 @@ import math
 
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from django.db import transaction as db_transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -18,12 +18,22 @@ from transactions.services import apply_transaction
 
 from .models import Game, ShopBingoSession
 from .serializers import (
+    DetailResponseSerializer,
+    GameAuditReportResponseSerializer,
+    GameCartellaDrawResponseSerializer,
+    GameClaimResponseSerializer,
     GameClaimSerializer,
     GameCompleteSerializer,
     GameCreateSerializer,
+    GameNextCallResponseSerializer,
+    GameShuffleResponseSerializer,
+    GameStartResponseSerializer,
+    GameStateResponseSerializer,
     GameSerializer,
+    PublicCartellaResponseSerializer,
     ShopBingoCartellaSelectSerializer,
     ShopBingoConfirmPaymentSerializer,
+    ShopBingoSessionGameResponseSerializer,
     ShopBingoSessionCreateSerializer,
     ShopBingoSessionSerializer,
 )
@@ -285,7 +295,13 @@ class GameDrawView(APIView):
 class GameStateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(tags=["Games"])
+    @extend_schema(
+        responses={
+            200: GameStateResponseSerializer,
+            404: OpenApiResponse(description="Game not found"),
+        },
+        tags=["Games"],
+    )
     def get(self, request, code: str):
         game = get_object_or_404(
             Game.objects.only(
@@ -320,7 +336,14 @@ class GameStateView(APIView):
 class GameShuffleView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(tags=["Games"])
+    @extend_schema(
+        responses={
+            200: GameShuffleResponseSerializer,
+            400: DetailResponseSerializer,
+            404: OpenApiResponse(description="Game not found"),
+        },
+        tags=["Games"],
+    )
     def post(self, request, code: str):
         game = get_object_or_404(
             Game.objects.only(
@@ -366,7 +389,14 @@ class GameShuffleView(APIView):
 class GameStartView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(tags=["Games"])
+    @extend_schema(
+        responses={
+            200: GameStartResponseSerializer,
+            400: DetailResponseSerializer,
+            404: OpenApiResponse(description="Game not found"),
+        },
+        tags=["Games"],
+    )
     def post(self, request, code: str):
         game = get_object_or_404(
             Game.objects.only("game_code", "status", "started_at"),
@@ -399,7 +429,14 @@ class GameStartView(APIView):
 class GameNextCallView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(tags=["Games"])
+    @extend_schema(
+        responses={
+            200: GameNextCallResponseSerializer,
+            400: DetailResponseSerializer,
+            404: OpenApiResponse(description="Game not found"),
+        },
+        tags=["Games"],
+    )
     def post(self, request, code: str):
         game = get_object_or_404(
             Game.objects.only(
@@ -458,7 +495,10 @@ class GameCartellaDrawView(APIView):
     permission_classes = [permissions.AllowAny]
 
     @extend_schema(
-        responses={200: OpenApiResponse(description="Cartella draw sequence returned")},
+        responses={
+            200: GameCartellaDrawResponseSerializer,
+            404: DetailResponseSerializer,
+        },
         tags=["Games"],
         summary="Public cartella draw",
     )
@@ -492,7 +532,15 @@ class GameCompleteView(APIView):
 class GameClaimView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(request=GameClaimSerializer, tags=["Games"])
+    @extend_schema(
+        request=GameClaimSerializer,
+        responses={
+            200: GameClaimResponseSerializer,
+            400: DetailResponseSerializer,
+            404: OpenApiResponse(description="Game not found"),
+        },
+        tags=["Games"],
+    )
     def post(self, request, code: str):
         with db_transaction.atomic():
             game = get_object_or_404(Game.objects.select_for_update(), game_code=code, shop=request.user)
@@ -693,7 +741,15 @@ class ShopBingoSessionDetailView(APIView):
 class ShopBingoSessionReserveView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(request=ShopBingoCartellaSelectSerializer, responses={200: ShopBingoSessionSerializer}, tags=["Games"])
+    @extend_schema(
+        request=ShopBingoCartellaSelectSerializer,
+        responses={
+            200: ShopBingoSessionSerializer,
+            400: DetailResponseSerializer,
+            404: OpenApiResponse(description="Session not found"),
+        },
+        tags=["Games"],
+    )
     def post(self, request, session_id: str):
         serializer = ShopBingoCartellaSelectSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -772,7 +828,15 @@ class ShopBingoSessionReserveView(APIView):
 class ShopBingoSessionConfirmPaymentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(request=ShopBingoConfirmPaymentSerializer, tags=["Games"])
+    @extend_schema(
+        request=ShopBingoConfirmPaymentSerializer,
+        responses={
+            200: ShopBingoSessionGameResponseSerializer,
+            400: DetailResponseSerializer,
+            404: OpenApiResponse(description="Session or player not found"),
+        },
+        tags=["Games"],
+    )
     def post(self, request, session_id: str):
         serializer = ShopBingoConfirmPaymentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -824,7 +888,14 @@ class ShopBingoSessionConfirmPaymentView(APIView):
 class ShopBingoSessionCreateGameView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(tags=["Games"])
+    @extend_schema(
+        responses={
+            200: ShopBingoSessionGameResponseSerializer,
+            400: DetailResponseSerializer,
+            404: OpenApiResponse(description="Session not found"),
+        },
+        tags=["Games"],
+    )
     def post(self, request, session_id: str):
         with db_transaction.atomic():
             session = get_object_or_404(
@@ -890,7 +961,15 @@ class ShopBingoSessionCreateGameView(APIView):
 class PublicGameCartellaView(APIView):
     permission_classes = [permissions.AllowAny]
 
-    @extend_schema(tags=["Games"])
+    @extend_schema(
+        responses={
+            200: PublicCartellaResponseSerializer,
+            400: DetailResponseSerializer,
+            404: DetailResponseSerializer,
+            429: OpenApiResponse(description="Rate limited"),
+        },
+        tags=["Games"],
+    )
     def get(self, request, game_id: str, cartella_number: int):
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         client_ip = (
@@ -964,7 +1043,18 @@ class PublicGameCartellaView(APIView):
 class GameAuditReportView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(tags=["Games"])
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name="search", description="Search game ID, winner labels, transaction reference", required=False, type=str),
+            OpenApiParameter(name="status", description="Filter game status", required=False, type=str),
+            OpenApiParameter(name="tx_type", description="Filter transaction type", required=False, type=str),
+            OpenApiParameter(name="start_date", description="Start date (YYYY-MM-DD)", required=False, type=str),
+            OpenApiParameter(name="end_date", description="End date (YYYY-MM-DD)", required=False, type=str),
+            OpenApiParameter(name="days", description="Relative date window in days", required=False, type=int),
+        ],
+        responses={200: GameAuditReportResponseSerializer},
+        tags=["Games"],
+    )
     def get(self, request):
         search = (request.query_params.get("search") or "").strip().lower()
         status_filter = (request.query_params.get("status") or "").strip().lower()
