@@ -90,6 +90,8 @@ class ShopUser(AbstractBaseUser, PermissionsMixin):
         choices=[("totp", "Authenticator app"), ("email_code", "Email code")],
         default="totp",
     )
+    two_factor_totp_enabled = models.BooleanField(default=False)
+    two_factor_email_enabled = models.BooleanField(default=False)
     totp_secret = models.CharField(max_length=64, blank=True, default="")
     two_factor_email_code = models.CharField(max_length=6, blank=True, default="")
     two_factor_email_code_expires_at = models.DateTimeField(null=True, blank=True)
@@ -152,9 +154,27 @@ class ShopUser(AbstractBaseUser, PermissionsMixin):
         self.two_factor_email_code = ""
         self.two_factor_email_code_expires_at = None
 
+    def get_enabled_2fa_methods(self) -> list[str]:
+        methods: list[str] = []
+        if self.two_factor_totp_enabled:
+            methods.append("totp")
+        if self.two_factor_email_enabled:
+            methods.append("email_code")
+        return methods
+
+    def sync_two_factor_status(self):
+        methods = self.get_enabled_2fa_methods()
+        self.two_factor_enabled = len(methods) > 0
+        if methods:
+            if self.two_factor_method not in methods:
+                self.two_factor_method = methods[0]
+        else:
+            self.two_factor_method = "totp"
+
     def save(self, *args, **kwargs):
         # Keep Django's is_active flag aligned with the business status.
         self.is_active = self.status == self.Status.ACTIVE
+        self.sync_two_factor_status()
         self._ensure_shop_code()
         self._ensure_human_shop_id()
         super().save(*args, **kwargs)

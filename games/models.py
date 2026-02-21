@@ -39,6 +39,7 @@ class Game(models.Model):
     cartella_statuses = models.JSONField(default=dict, blank=True)  # cartella index -> active|banned|winner
     awarded_claims = models.JSONField(default=list, blank=True)  # successful and failed claim events
     total_pool = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    cut_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=10)
     win_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=90)
     payout_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     shop_cut_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)

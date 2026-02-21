@@ -140,11 +140,12 @@ def _resolve_game_financials(game: Game) -> tuple[Decimal, Decimal, Decimal]:
         else game.bet_amount * Decimal(len(game.cartella_numbers))
     )
 
-    win_percentage = Decimal(str(game.win_percentage or Decimal("90")))
-    payout_amount = (total_pool * win_percentage / Decimal("100")).quantize(
+    cut_percentage = Decimal(str(game.cut_percentage if game.cut_percentage is not None else Decimal("10")))
+    cut_percentage = max(Decimal("0"), min(Decimal("100"), cut_percentage))
+    shop_cut = (total_pool * cut_percentage / Decimal("100")).quantize(
         Decimal("0.01"), rounding=ROUND_HALF_UP
     )
-    shop_cut = (total_pool - payout_amount).quantize(
+    payout_amount = (total_pool - shop_cut).quantize(
         Decimal("0.01"), rounding=ROUND_HALF_UP
     )
     return total_pool, payout_amount, shop_cut
@@ -187,13 +188,18 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
     cartella_boards = _generate_unique_cartella_boards(len(all_cartella_numbers))
     cartella_map = {str(cartella_number): index for index, cartella_number in enumerate(all_cartella_numbers)}
 
-    win_percentage = Decimal(
-        str(
-            session.shop.feature_flags.get("win_percentage", 90)
-            if isinstance(session.shop.feature_flags, dict)
-            else 90
-        )
-    )
+    feature_flags = session.shop.feature_flags if isinstance(session.shop.feature_flags, dict) else {}
+    cut_percentage_raw = feature_flags.get("cut_percentage")
+    if cut_percentage_raw is None and "win_percentage" in feature_flags:
+        cut_percentage_raw = Decimal("100") - Decimal(str(feature_flags.get("win_percentage", 90)))
+
+    try:
+        cut_percentage = Decimal(str(cut_percentage_raw if cut_percentage_raw is not None else 10))
+    except Exception:
+        cut_percentage = Decimal("10")
+
+    cut_percentage = max(Decimal("0"), min(Decimal("100"), cut_percentage))
+    win_percentage = Decimal("100") - cut_percentage
     total_pool = session.total_payable
     if total_pool <= 0:
         raise ValueError("Session total payable must be greater than zero before game creation")
@@ -207,6 +213,7 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
             num_players=4,
             win_amount=session.total_payable,
             total_pool=total_pool,
+            cut_percentage=cut_percentage,
             win_percentage=win_percentage,
             payout_amount=Decimal("0"),
             shop_cut_amount=Decimal("0"),
@@ -593,6 +600,7 @@ class GameClaimView(APIView):
                         "event": "bingo_shop_cut_credit",
                         "game_id": game.game_code,
                         "total_pool": str(total_pool),
+                        "cut_percentage": str(game.cut_percentage),
                         "payout_amount": str(payout_amount),
                         "shop_cut": str(shop_cut),
                         "winner_cartella_index": cartella_index,
@@ -615,6 +623,7 @@ class GameClaimView(APIView):
             game.cartella_statuses = cartella_statuses
             game.winning_pattern = selected_pattern
             game.total_pool = total_pool
+            game.cut_percentage = game.cut_percentage if game.cut_percentage is not None else Decimal("10")
             game.payout_amount = payout_amount
             game.shop_cut_amount = shop_cut
             game.ended_at = game.ended_at or timezone.now()
@@ -627,6 +636,7 @@ class GameClaimView(APIView):
                     "cartella_statuses",
                     "winning_pattern",
                     "total_pool",
+                    "cut_percentage",
                     "payout_amount",
                     "shop_cut_amount",
                     "ended_at",

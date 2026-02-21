@@ -12,6 +12,8 @@ from .models import LoginAttempt, ShopUser
 
 
 class ShopUserSerializer(serializers.ModelSerializer):
+    two_factor_methods = serializers.SerializerMethodField()
+
     class Meta:
         model = ShopUser
         fields = [
@@ -33,6 +35,9 @@ class ShopUserSerializer(serializers.ModelSerializer):
             "profile_completed",
             "two_factor_enabled",
             "two_factor_method",
+            "two_factor_totp_enabled",
+            "two_factor_email_enabled",
+            "two_factor_methods",
             "must_change_password",
             "created_at",
         ]
@@ -40,6 +45,9 @@ class ShopUserSerializer(serializers.ModelSerializer):
             "contact_email": {"required": True},
             "contact_phone": {"required": True},
         }
+
+    def get_two_factor_methods(self, obj):
+        return obj.get_enabled_2fa_methods()
 
 
 class LoginSerializer(serializers.Serializer):
@@ -62,37 +70,15 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid credentials")
         # Enforce OTP when 2FA is enabled
         if getattr(user, "two_factor_enabled", False):
-            method = getattr(user, "two_factor_method", "totp") or "totp"
+            enabled_methods = user.get_enabled_2fa_methods()
+            if not enabled_methods:
+                fallback_method = getattr(user, "two_factor_method", "totp") or "totp"
+                enabled_methods = [fallback_method]
             otp = attrs.get("otp")
 
-            if method == "totp":
-                if not otp:
-                    raise serializers.ValidationError(
-                        {
-                            "otp": "OTP code required",
-                            "two_factor_method": method,
-                        }
-                    )
-                if not user.totp_secret:
-                    raise serializers.ValidationError("Two-factor is enabled but no secret is configured. Contact support.")
-                totp = pyotp.TOTP(user.totp_secret)
-                if not totp.verify(otp, valid_window=1):
-                    raise serializers.ValidationError(
-                        {
-                            "otp": "Invalid or expired OTP",
-                            "two_factor_method": method,
-                        }
-                    )
-            elif method == "email_code":
-                if not user.contact_email:
-                    raise serializers.ValidationError(
-                        {
-                            "otp": "No contact email configured for email 2FA",
-                            "two_factor_method": method,
-                        }
-                    )
-
-                if not otp:
+            if not otp:
+                sent_email_code = False
+                if "email_code" in enabled_methods and user.contact_email:
                     code = user.generate_email_2fa_code()
                     user.save(update_fields=["two_factor_email_code", "two_factor_email_code_expires_at"])
                     send_mail(
@@ -102,28 +88,39 @@ class LoginSerializer(serializers.Serializer):
                         [user.contact_email],
                         fail_silently=getattr(settings, "EMAIL_FAIL_SILENTLY", False),
                     )
-                    raise serializers.ValidationError(
-                        {
-                            "otp": "OTP code required. A code was sent to your email.",
-                            "two_factor_method": method,
-                        }
-                    )
+                    sent_email_code = True
 
-                if not user.verify_email_2fa_code(otp):
-                    raise serializers.ValidationError(
-                        {
-                            "otp": "Invalid or expired OTP",
-                            "two_factor_method": method,
-                        }
-                    )
-
-                user.clear_email_2fa_code()
-                user.save(update_fields=["two_factor_email_code", "two_factor_email_code_expires_at"])
-            else:
+                message = "OTP code required"
+                if sent_email_code:
+                    message = "OTP code required. A code was sent to your email."
                 raise serializers.ValidationError(
                     {
-                        "otp": "Unsupported two-factor method",
-                        "two_factor_method": method,
+                        "otp": message,
+                        "two_factor_method": enabled_methods[0],
+                        "two_factor_methods": enabled_methods,
+                    }
+                )
+
+            otp_valid = False
+
+            if "totp" in enabled_methods:
+                if not user.totp_secret:
+                    raise serializers.ValidationError("Two-factor is enabled but no secret is configured. Contact support.")
+                totp = pyotp.TOTP(user.totp_secret)
+                otp_valid = totp.verify(otp, valid_window=1)
+
+            if not otp_valid and "email_code" in enabled_methods:
+                otp_valid = user.verify_email_2fa_code(otp)
+                if otp_valid:
+                    user.clear_email_2fa_code()
+                    user.save(update_fields=["two_factor_email_code", "two_factor_email_code_expires_at"])
+
+            if not otp_valid:
+                raise serializers.ValidationError(
+                    {
+                        "otp": "Invalid or expired OTP",
+                        "two_factor_method": enabled_methods[0],
+                        "two_factor_methods": enabled_methods,
                     }
                 )
 
@@ -164,6 +161,8 @@ class MeResponseSerializer(serializers.Serializer):
 
 
 class ShopProfileSerializer(serializers.ModelSerializer):
+    two_factor_methods = serializers.SerializerMethodField()
+
     class Meta:
         model = ShopUser
         fields = [
@@ -184,6 +183,9 @@ class ShopProfileSerializer(serializers.ModelSerializer):
             "feature_flags",
             "two_factor_enabled",
             "two_factor_method",
+            "two_factor_totp_enabled",
+            "two_factor_email_enabled",
+            "two_factor_methods",
             "created_at",
         ]
         read_only_fields = [
@@ -196,8 +198,14 @@ class ShopProfileSerializer(serializers.ModelSerializer):
             "max_stake",
             "two_factor_enabled",
             "two_factor_method",
+            "two_factor_totp_enabled",
+            "two_factor_email_enabled",
+            "two_factor_methods",
             "created_at",
         ]
+
+    def get_two_factor_methods(self, obj):
+        return obj.get_enabled_2fa_methods()
 
     def validate(self, attrs):
         if attrs and set(attrs.keys()) <= {"feature_flags"}:
@@ -331,7 +339,21 @@ class TwoFactorDisableSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         user = self.context["request"].user
-        method = attrs.get("method") or user.two_factor_method
+        enabled_methods = user.get_enabled_2fa_methods()
+        method = attrs.get("method")
+
+        if not enabled_methods:
+            raise serializers.ValidationError({"detail": "Two-factor is not enabled."})
+
+        if not method:
+            if len(enabled_methods) == 1:
+                method = enabled_methods[0]
+            else:
+                raise serializers.ValidationError({"method": "Specify which two-factor method to disable."})
+
+        if method not in enabled_methods:
+            raise serializers.ValidationError({"method": "Selected method is not currently enabled."})
+
         otp = attrs.get("otp")
 
         if method == "totp":

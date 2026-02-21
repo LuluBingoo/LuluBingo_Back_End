@@ -37,6 +37,7 @@ class GameSerializer(serializers.ModelSerializer):
             "cartella_statuses",
             "awarded_claims",
             "total_pool",
+            "cut_percentage",
             "win_percentage",
             "payout_amount",
             "shop_cut_amount",
@@ -79,6 +80,15 @@ class GameCreateSerializer(serializers.ModelSerializer):
         user: ShopUser = self.context["user"]
         cartellas = validated_data["cartella_numbers"]
         total_bet = validated_data["bet_amount"] * len(cartellas)
+        feature_flags = user.feature_flags if isinstance(user.feature_flags, dict) else {}
+
+        cut_percentage_raw = feature_flags.get("cut_percentage", 10)
+        try:
+            cut_percentage = Decimal(str(cut_percentage_raw))
+        except Exception:
+            cut_percentage = Decimal("10")
+        cut_percentage = max(Decimal("0"), min(Decimal("100"), cut_percentage))
+        win_percentage = Decimal("100") - cut_percentage
 
         try:
             with db_transaction.atomic():
@@ -87,6 +97,9 @@ class GameCreateSerializer(serializers.ModelSerializer):
                     bet_amount=validated_data["bet_amount"],
                     num_players=validated_data["num_players"],
                     win_amount=validated_data["win_amount"],
+                    total_pool=total_bet,
+                    cut_percentage=cut_percentage,
+                    win_percentage=win_percentage,
                     cartella_numbers=cartellas,
                     cartella_statuses={str(index): "active" for index in range(len(cartellas))},
                     status=Game.Status.ACTIVE,

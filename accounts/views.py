@@ -295,13 +295,23 @@ class TwoFactorEnableView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         method = serializer.validated_data["method"]
-        user.two_factor_enabled = True
-        user.two_factor_method = method
+
+        if method == "totp":
+            user.two_factor_totp_enabled = True
+            user.two_factor_method = "totp"
+        else:
+            user.two_factor_email_enabled = True
+            if user.two_factor_method not in user.get_enabled_2fa_methods():
+                user.two_factor_method = "email_code"
+
+        user.sync_two_factor_status()
         user.clear_email_2fa_code()
         user.save(
             update_fields=[
                 "two_factor_enabled",
                 "two_factor_method",
+                "two_factor_totp_enabled",
+                "two_factor_email_enabled",
                 "two_factor_email_code",
                 "two_factor_email_code_expires_at",
             ]
@@ -326,11 +336,21 @@ class TwoFactorDisableView(APIView):
         serializer = TwoFactorDisableSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
-        user.two_factor_enabled = False
+        method = serializer.validated_data["method"]
+
+        if method == "totp":
+            user.two_factor_totp_enabled = False
+        elif method == "email_code":
+            user.two_factor_email_enabled = False
+
+        user.sync_two_factor_status()
         user.clear_email_2fa_code()
         user.save(
             update_fields=[
                 "two_factor_enabled",
+                "two_factor_method",
+                "two_factor_totp_enabled",
+                "two_factor_email_enabled",
                 "two_factor_email_code",
                 "two_factor_email_code_expires_at",
             ]
@@ -338,7 +358,7 @@ class TwoFactorDisableView(APIView):
         _send_security_email(
             user,
             "Two-factor disabled",
-            "Two-factor authentication was disabled on your shop account. If this wasn't you, enable it again and contact support.",
+            f"Two-factor authentication ({method}) was disabled on your shop account. If this wasn't you, enable it again and contact support.",
         )
         return Response(ShopUserSerializer(user).data)
 
