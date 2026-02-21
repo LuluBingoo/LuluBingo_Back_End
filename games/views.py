@@ -1,10 +1,12 @@
 from decimal import Decimal, ROUND_HALF_UP
 import random
+from datetime import datetime, timedelta
 
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from django.db import transaction as db_transaction
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -911,10 +913,54 @@ class GameAuditReportView(APIView):
         search = (request.query_params.get("search") or "").strip().lower()
         status_filter = (request.query_params.get("status") or "").strip().lower()
         tx_type_filter = (request.query_params.get("tx_type") or "").strip().lower()
+        start_date_raw = (request.query_params.get("start_date") or "").strip()
+        end_date_raw = (request.query_params.get("end_date") or "").strip()
+        days_raw = (request.query_params.get("days") or "").strip()
+
+        def _range_bounds() -> tuple[datetime | None, datetime | None]:
+            start_dt = None
+            end_dt = None
+
+            if days_raw:
+                try:
+                    days_value = int(days_raw)
+                except ValueError:
+                    days_value = 0
+
+                if days_value > 0:
+                    now = timezone.now()
+                    start_dt = now - timedelta(days=days_value)
+                    end_dt = now
+                    return start_dt, end_dt
+
+            if start_date_raw:
+                parsed_start = parse_date(start_date_raw)
+                if parsed_start:
+                    start_dt = timezone.make_aware(
+                        datetime.combine(parsed_start, datetime.min.time())
+                    )
+
+            if end_date_raw:
+                parsed_end = parse_date(end_date_raw)
+                if parsed_end:
+                    end_dt = timezone.make_aware(
+                        datetime.combine(parsed_end, datetime.max.time())
+                    )
+
+            if start_dt and end_dt and start_dt > end_dt:
+                start_dt, end_dt = end_dt, start_dt
+
+            return start_dt, end_dt
+
+        start_dt, end_dt = _range_bounds()
 
         games = Game.objects.filter(shop=request.user)
         if status_filter in ALLOWED_GAME_STATUS_FILTERS:
             games = games.filter(status=status_filter)
+        if start_dt:
+            games = games.filter(created_at__gte=start_dt)
+        if end_dt:
+            games = games.filter(created_at__lte=end_dt)
 
         games = games.values(
             "game_code",
@@ -982,6 +1028,10 @@ class GameAuditReportView(APIView):
         transactions = Transaction.objects.filter(user=request.user)
         if tx_type_filter in ALLOWED_TX_TYPE_FILTERS:
             transactions = transactions.filter(tx_type=tx_type_filter)
+        if start_dt:
+            transactions = transactions.filter(created_at__gte=start_dt)
+        if end_dt:
+            transactions = transactions.filter(created_at__lte=end_dt)
 
         transactions = transactions.values(
             "id",
