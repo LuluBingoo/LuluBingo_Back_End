@@ -882,6 +882,12 @@ class PublicGameCartellaView(APIView):
     def get(self, request, game_id: str, cartella_number: int):
         game = get_object_or_404(Game, game_code=game_id)
 
+        if game.status != Game.Status.ACTIVE:
+            return Response(
+                {"detail": "Game is not active"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         if game.game_mode == Game.Mode.SHOP_FIXED4:
             mapped_index = game.cartella_number_map.get(str(cartella_number))
             if mapped_index is None:
@@ -900,6 +906,7 @@ class PublicGameCartellaView(APIView):
                 "cartella_numbers": game.cartella_numbers[cartella_index],
                 "cartella_draw_sequence": game.cartella_draw_sequences[cartella_index],
                 "status": game.status,
+                "called_numbers": game.called_numbers or [],
                 "created_at": game.created_at,
             }
         )
