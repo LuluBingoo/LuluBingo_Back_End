@@ -2,7 +2,6 @@ import os
 
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -14,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import LoginAttempt
+from .emailing import send_branded_email
 from .serializers import (
     AuthTokenResponseSerializer,
     ChangePasswordSerializer,
@@ -53,12 +53,11 @@ def _send_security_email(user, subject: str, message: str):
     if not user or not user.contact_email:
         return
 
-    send_mail(
-        subject,
-        message,
-        getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@lulu-bingo.local"),
-        [user.contact_email],
-        fail_silently=getattr(settings, "EMAIL_FAIL_SILENTLY", False),
+    send_branded_email(
+        to_email=user.contact_email,
+        subject=subject,
+        heading=subject,
+        message=message,
     )
 
 

@@ -1,6 +1,4 @@
 import pyotp
-from django.conf import settings
-from django.core.mail import send_mail
 from django.utils import timezone
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import default_token_generator
@@ -9,6 +7,7 @@ from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
 
 from .models import LoginAttempt, ShopUser
+from .emailing import send_branded_email
 
 
 class ShopUserSerializer(serializers.ModelSerializer):
@@ -81,12 +80,11 @@ class LoginSerializer(serializers.Serializer):
                 if "email_code" in enabled_methods and user.contact_email:
                     code = user.generate_email_2fa_code()
                     user.save(update_fields=["two_factor_email_code", "two_factor_email_code_expires_at"])
-                    send_mail(
-                        "Your Lulu Bingo login code",
-                        f"Your verification code is: {code}. It expires in 10 minutes.",
-                        getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@lulu-bingo.local"),
-                        [user.contact_email],
-                        fail_silently=getattr(settings, "EMAIL_FAIL_SILENTLY", False),
+                    send_branded_email(
+                        to_email=user.contact_email,
+                        subject="Your Lulu Bingo login code",
+                        heading="Two-factor verification code",
+                        message=f"Your verification code is: {code}. It expires in 10 minutes.",
                     )
                     sent_email_code = True
 
