@@ -9,6 +9,7 @@ from .views import (
     PasswordResetRequestView,
     ShopProfileView,
     TwoFactorDisableView,
+    TwoFactorEmailCodeView,
     TwoFactorEnableView,
     TwoFactorSetupView,
 )
@@ -23,5 +24,6 @@ urlpatterns = [
     path("auth/2fa/setup", TwoFactorSetupView.as_view(), name="2fa-setup"),
     path("auth/2fa/enable", TwoFactorEnableView.as_view(), name="2fa-enable"),
     path("auth/2fa/disable", TwoFactorDisableView.as_view(), name="2fa-disable"),
+    path("auth/2fa/email-code", TwoFactorEmailCodeView.as_view(), name="2fa-email-code"),
     path("shop/profile", ShopProfileView.as_view(), name="shop-profile"),
 ]

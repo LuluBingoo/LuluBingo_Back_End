@@ -24,6 +24,7 @@ from .serializers import (
     ShopProfileSerializer,
     ShopUserSerializer,
     TwoFactorDisableSerializer,
+    TwoFactorEmailCodeSerializer,
     TwoFactorEnableSerializer,
     TwoFactorSetupSerializer,
 )
@@ -293,13 +294,22 @@ class TwoFactorEnableView(APIView):
         serializer = TwoFactorEnableSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
+        method = serializer.validated_data["method"]
         user.two_factor_enabled = True
-        user.two_factor_method = "totp"
-        user.save(update_fields=["two_factor_enabled", "two_factor_method"])
+        user.two_factor_method = method
+        user.clear_email_2fa_code()
+        user.save(
+            update_fields=[
+                "two_factor_enabled",
+                "two_factor_method",
+                "two_factor_email_code",
+                "two_factor_email_code_expires_at",
+            ]
+        )
         _send_security_email(
             user,
             "Two-factor enabled",
-            "Two-factor authentication (TOTP) was enabled on your shop account.",
+            f"Two-factor authentication ({method}) was enabled on your shop account.",
         )
         return Response(ShopUserSerializer(user).data)
 
@@ -317,10 +327,43 @@ class TwoFactorDisableView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         user.two_factor_enabled = False
-        user.save(update_fields=["two_factor_enabled"])
+        user.clear_email_2fa_code()
+        user.save(
+            update_fields=[
+                "two_factor_enabled",
+                "two_factor_email_code",
+                "two_factor_email_code_expires_at",
+            ]
+        )
         _send_security_email(
             user,
             "Two-factor disabled",
             "Two-factor authentication was disabled on your shop account. If this wasn't you, enable it again and contact support.",
         )
         return Response(ShopUserSerializer(user).data)
+
+
+class TwoFactorEmailCodeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        request=TwoFactorEmailCodeSerializer,
+        responses={200: OpenApiResponse(description="Email code sent")},
+        tags=["Authentication"],
+    )
+    def post(self, request):
+        serializer = TwoFactorEmailCodeSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        purpose = serializer.validated_data["purpose"]
+        code = user.generate_email_2fa_code()
+        user.save(update_fields=["two_factor_email_code", "two_factor_email_code_expires_at"])
+
+        _send_security_email(
+            user,
+            "Your Lulu Bingo verification code",
+            f"Your verification code is: {code}. It expires in 10 minutes. Purpose: {purpose}.",
+        )
+
+        return Response({"detail": "Verification code sent to your email.", "purpose": purpose})
