@@ -1,7 +1,9 @@
 from decimal import Decimal, ROUND_HALF_UP
 import random
 from datetime import datetime, timedelta
+import math
 
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from django.db import transaction as db_transaction
@@ -880,6 +882,43 @@ class PublicGameCartellaView(APIView):
 
     @extend_schema(tags=["Games"])
     def get(self, request, game_id: str, cartella_number: int):
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        client_ip = (
+            x_forwarded_for.split(",")[0].strip()
+            if x_forwarded_for
+            else request.META.get("REMOTE_ADDR", "unknown")
+        )
+
+        rate_limit_count = 30
+        rate_limit_window_seconds = 60
+        now_ts = timezone.now().timestamp()
+        rate_key = f"public-cartella-rate:{client_ip}"
+        request_timestamps = cache.get(rate_key, [])
+        request_timestamps = [
+            ts
+            for ts in request_timestamps
+            if now_ts - float(ts) < rate_limit_window_seconds
+        ]
+
+        if len(request_timestamps) >= rate_limit_count:
+            retry_after_seconds = max(
+                1,
+                math.ceil(
+                    rate_limit_window_seconds - (now_ts - float(request_timestamps[0]))
+                ),
+            )
+            return Response(
+                {
+                    "detail": "Too many requests. Please wait and try again.",
+                    "error_code": "rate_limited",
+                    "retry_after_seconds": retry_after_seconds,
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        request_timestamps.append(now_ts)
+        cache.set(rate_key, request_timestamps, timeout=rate_limit_window_seconds)
+
         game = get_object_or_404(Game, game_code=game_id)
 
         if game.status != Game.Status.ACTIVE:
