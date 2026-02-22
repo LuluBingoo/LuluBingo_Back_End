@@ -232,6 +232,11 @@ EMAIL_BACKEND = os.getenv(
 )
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@lulu-bingo.local")
 
+# Branded email presentation
+BRAND_NAME = os.getenv("BRAND_NAME", "LULU Bingo")
+BRAND_LOGO_URL = os.getenv("BRAND_LOGO_URL", "")
+APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5173")
+
 
 # --------------------------------------------------
 # Custom User

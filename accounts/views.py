@@ -213,11 +213,16 @@ class PasswordResetRequestView(APIView):
             reset_link = request.build_absolute_uri(
                 f"/api/auth/password/reset/confirm?uid={uid}&token={token}"
             )
-            _send_security_email(
-                user,
-                "Password reset requested",
-                "We received a request to reset your shop password. "
-                f"Use this link to complete it: {reset_link}. If this wasn't you, you can ignore this email.",
+            send_branded_email(
+                to_email=user.contact_email,
+                subject="Password reset requested",
+                heading="Reset your password",
+                message=(
+                    "We received a request to reset your shop password. "
+                    "Click the button below to complete the reset. If this wasn't you, ignore this email."
+                ),
+                cta_text="Reset Password",
+                cta_url=reset_link,
             )
 
         return Response({"detail": "If the account exists, a reset email has been sent."})
