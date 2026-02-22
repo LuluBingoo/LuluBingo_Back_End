@@ -50,7 +50,6 @@ def _generate_cartella_board() -> list[int]:
     for min_n, max_n in ranges:
         col = random.sample(range(min_n, max_n + 1), 5)
         numbers.extend(col)
-    numbers[12] = 0
     return numbers
 
 
@@ -60,6 +59,7 @@ def _generate_unique_cartella_boards(count: int) -> list[list[int]]:
 
     boards: list[list[int]] = []
     signatures: set[tuple[int, ...]] = set()
+    value_signatures: set[tuple[int, ...]] = set()
     attempts = 0
     max_attempts = max(count * 400, 400)
 
@@ -69,11 +69,18 @@ def _generate_unique_cartella_boards(count: int) -> list[list[int]]:
             raise ValueError("Failed to generate unique cartella boards")
 
         board = _generate_cartella_board()
+        if len(board) != 25 or len(set(board)) != 25:
+            continue
+
         signature = tuple(board)
+        value_signature = tuple(sorted(board))
         if signature in signatures:
+            continue
+        if value_signature in value_signatures:
             continue
 
         signatures.add(signature)
+        value_signatures.add(value_signature)
         boards.append(board)
 
     return boards
@@ -103,7 +110,8 @@ def _board_matches_pattern(
     def is_marked(value: int) -> bool:
         return value == 0 or value in called_set
 
-    grid = [board[idx : idx + 5] for idx in range(0, 25, 5)]
+    # Board is stored in column-major order (col * 5 + row), matching frontend rendering.
+    grid = [[board[col * 5 + row] for col in range(5)] for row in range(5)]
 
     if normalized == "row":
         return any(all(is_marked(value) for value in row) for row in grid)

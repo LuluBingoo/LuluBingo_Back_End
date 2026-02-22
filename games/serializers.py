@@ -222,10 +222,7 @@ class GameClaimSerializer(serializers.Serializer):
 
         called_set = set(called_numbers)
         cartella_numbers = game.cartella_numbers[cartella_index]
-        if len(cartella_numbers) == 25:
-            winning_numbers = [number for index, number in enumerate(cartella_numbers) if index != 12]
-        else:
-            winning_numbers = list(cartella_numbers)
+        winning_numbers = list(cartella_numbers)
 
         missing_numbers = [number for number in winning_numbers if number not in called_set]
         attrs["is_bingo"] = len(missing_numbers) == 0
