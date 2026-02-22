@@ -1,6 +1,11 @@
+import logging
+
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import escape
+
+
+logger = logging.getLogger(__name__)
 
 
 def _resolve_from_email() -> str:
@@ -73,4 +78,17 @@ def send_branded_email(
         to=[to_email],
     )
     email.attach_alternative(html_body, "text/html")
-    email.send(fail_silently=getattr(settings, "EMAIL_FAIL_SILENTLY", False))
+
+    fail_hard = bool(getattr(settings, "EMAIL_FAIL_HARD", False))
+    log_traceback = bool(getattr(settings, "EMAIL_LOG_TRACEBACK", False))
+    try:
+      email.send(fail_silently=False)
+    except Exception as exc:
+      logger.warning(
+        "Failed to send branded email to %s: %s",
+        to_email,
+        exc,
+        exc_info=log_traceback,
+      )
+      if fail_hard:
+        raise
