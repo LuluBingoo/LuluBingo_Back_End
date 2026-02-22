@@ -22,6 +22,8 @@ def apply_transaction(
     tx_type: str,
     reference: str = "",
     metadata: Optional[dict] = None,
+    actor_role: Optional[str] = None,
+    currency: str = Transaction.Currency.ETB,
 ) -> Transaction:
     metadata = metadata or {}
     amount = Decimal(amount)
@@ -41,6 +43,12 @@ def apply_transaction(
         locked_user.wallet_balance = after
         locked_user.save(update_fields=["wallet_balance"])
 
+        resolved_actor_role = actor_role
+        if resolved_actor_role is None:
+            resolved_actor_role = (
+                Transaction.ActorRole.ADMIN if locked_user.is_staff else Transaction.ActorRole.SHOP
+            )
+
         tx = Transaction.objects.create(
             user=locked_user,
             tx_type=tx_type,
@@ -49,5 +57,7 @@ def apply_transaction(
             balance_after=after,
             reference=reference,
             metadata=metadata,
+            actor_role=resolved_actor_role,
+            currency=currency,
         )
     return tx

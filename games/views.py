@@ -184,10 +184,14 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
         return session.game
 
     players = session.players_data
-    if len(players) != 4:
-        raise ValueError("Exactly 4 players are required before game creation")
+    if len(players) != session.fixed_players:
+        raise ValueError(
+            f"Exactly {session.fixed_players} players are required before game creation"
+        )
     if not all(bool(p.get("paid")) for p in players):
-        raise ValueError("All 4 players must confirm payment before game creation")
+        raise ValueError(
+            f"All {session.fixed_players} players must confirm payment before game creation"
+        )
 
     all_cartella_numbers = [n for p in players for n in p.get("cartella_numbers", [])]
     if len(all_cartella_numbers) > 16:
@@ -220,7 +224,7 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
             game_mode=Game.Mode.SHOP_FIXED4,
             bet_amount=session.min_bet_per_cartella,
             min_bet_per_cartella=session.min_bet_per_cartella,
-            num_players=4,
+            num_players=session.fixed_players,
             win_amount=session.total_payable,
             total_pool=total_pool,
             cut_percentage=cut_percentage,
@@ -723,7 +727,7 @@ class ShopBingoSessionCreateView(APIView):
 
         session = ShopBingoSession.objects.create(
             shop=request.user,
-            fixed_players=4,
+            fixed_players=serializer.validated_data.get("fixed_players", 4),
             min_bet_per_cartella=serializer.validated_data["min_bet_per_cartella"],
         )
         return Response(ShopBingoSessionSerializer(session).data, status=status.HTTP_201_CREATED)
@@ -780,7 +784,10 @@ class ShopBingoSessionReserveView(APIView):
                 if bool(players[player_index].get("paid", False)):
                     return Response({"detail": "Paid players cannot change cartella selection"}, status=status.HTTP_400_BAD_REQUEST)
             elif len(players) >= session.fixed_players:
-                return Response({"detail": "Exactly 4 players are allowed"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": f"Exactly {session.fixed_players} players are allowed"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             taken_by_others = {
                 n
