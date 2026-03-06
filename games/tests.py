@@ -214,6 +214,31 @@ class GameTests(APITestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_public_cartella_lookup_rejects_more_than_four_numbers(self):
+        headers = self.auth_headers()
+        payload = {
+            "bet_amount": "10.00",
+            "num_players": 2,
+            "win_amount": "50.00",
+            "cartella_numbers": [[1, 2, 3], [4, 5, 6]],
+        }
+        create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
+        code = create_resp.data["game_code"]
+        game = Game.objects.get(game_code=code)
+        game.status = Game.Status.ACTIVE
+        game.save(update_fields=["status"])
+
+        resp = self.client.post(
+            reverse("public-game-cartella-check"),
+            {
+                "game_id": code,
+                "cartella_numbers": [1, 2, 3, 4, 5],
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cartella_numbers", resp.data)
+
     def test_claim_validates_bingo(self):
         headers = self.auth_headers()
         payload = {

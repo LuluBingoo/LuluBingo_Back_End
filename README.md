@@ -110,7 +110,9 @@ Notes:
 }
 ```
 
+- Send at most 4 cartella numbers per request.
 - Public lookup response returns the matching cartellas in `cartellas`, any unknown numbers in `missing_cartella_numbers`, and the shared `called_numbers` list for that game.
+- Each returned cartella also includes `cartella_draw_sequence` so the public route can show the full number order for all requested cartellas at once.
 - Legacy single-cartella GET is still available at `/api/games/game/<game_id>/cartella/<cartella_number>` for compatibility.
 - Transactions: routes under `/api/transactions/` for deposits, withdrawals, and history.
 - OpenAPI/Swagger: `/api/schema/` and `/api/docs/`.

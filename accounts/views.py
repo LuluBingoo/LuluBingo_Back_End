@@ -130,6 +130,7 @@ class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
+        request=None,
         responses={200: OpenApiResponse(description="Token invalidated")},
         tags=["Authentication"],
     )

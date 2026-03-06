@@ -276,8 +276,8 @@ paths:
           description: Rate limited
     post:
       operationId: api_games_game_cartella_create
-      description: Lookup one or more cartella boards for a public game by sending
-        a game ID and an array of cartella numbers.
+      description: Lookup up to 4 cartella boards for a public game by sending a game
+        ID and an array of cartella numbers.
       summary: Public cartella lookup
       parameters:
       - in: path
@@ -362,8 +362,8 @@ paths:
           description: Rate limited
     post:
       operationId: api_games_game_cartellas_check_create
-      description: Lookup one or more cartella boards for a public game by sending
-        a game ID and an array of cartella numbers.
+      description: Lookup up to 4 cartella boards for a public game by sending a game
+        ID and an array of cartella numbers.
       summary: Public cartella lookup
       tags:
       - Games
@@ -1734,6 +1734,8 @@ components:
           items:
             type: integer
             minimum: 1
+          description: Up to 4 cartella numbers for the given game.
+          maxItems: 4
       required:
       - cartella_numbers
       - game_id
@@ -1988,7 +1990,9 @@ components:
           type: boolean
           readOnly: true
         two_factor_methods:
-          type: string
+          type: array
+          items:
+            type: string
           readOnly: true
         created_at:
           type: string
@@ -2072,7 +2076,9 @@ components:
         two_factor_email_enabled:
           type: boolean
         two_factor_methods:
-          type: string
+          type: array
+          items:
+            type: string
           readOnly: true
         must_change_password:
           type: boolean

@@ -364,6 +364,7 @@ class GameShuffleView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
+        request=None,
         responses={
             200: GameShuffleResponseSerializer,
             400: DetailResponseSerializer,
@@ -417,6 +418,7 @@ class GameStartView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
+        request=None,
         responses={
             200: GameStartResponseSerializer,
             400: DetailResponseSerializer,
@@ -457,6 +459,7 @@ class GameNextCallView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
+        request=None,
         responses={
             200: GameNextCallResponseSerializer,
             400: DetailResponseSerializer,
@@ -920,6 +923,7 @@ class ShopBingoSessionCreateGameView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
+        request=None,
         responses={
             200: ShopBingoSessionGameResponseSerializer,
             400: DetailResponseSerializer,
@@ -1069,7 +1073,7 @@ class PublicGameCartellaView(APIView):
         },
         tags=["Games"],
         summary="Public cartella lookup",
-        description="Lookup one or more cartella boards for a public game by sending a game ID and an array of cartella numbers.",
+        description="Lookup up to 4 cartella boards for a public game by sending a game ID and an array of cartella numbers.",
     )
     def post(self, request):
         rate_limit_response = self._enforce_rate_limit(request)

@@ -45,7 +45,7 @@ class ShopUserSerializer(serializers.ModelSerializer):
             "contact_phone": {"required": True},
         }
 
-    def get_two_factor_methods(self, obj):
+    def get_two_factor_methods(self, obj) -> list[str]:
         return obj.get_enabled_2fa_methods()
 
 
@@ -275,7 +275,7 @@ class ShopProfileSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
-    def get_two_factor_methods(self, obj):
+    def get_two_factor_methods(self, obj) -> list[str]:
         return obj.get_enabled_2fa_methods()
 
     def validate(self, attrs):

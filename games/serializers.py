@@ -363,6 +363,8 @@ class PublicCartellaLookupSerializer(serializers.Serializer):
     cartella_numbers = serializers.ListField(
         child=serializers.IntegerField(min_value=1),
         allow_empty=False,
+        max_length=4,
+        help_text="Up to 4 cartella numbers for the given game.",
     )
 
     def validate_game_id(self, value: str) -> str:
@@ -372,9 +374,6 @@ class PublicCartellaLookupSerializer(serializers.Serializer):
         return normalized
 
     def validate_cartella_numbers(self, value: list[int]) -> list[int]:
-        if len(value) > 50:
-            raise serializers.ValidationError("You can check up to 50 cartellas per request.")
-
         normalized: list[int] = []
         seen: set[int] = set()
         for number in value:
