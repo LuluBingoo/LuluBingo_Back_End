@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: lulubingo-backend
+    env: python
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py migrate && gunicorn lulu_bingo.wsgi:application --bind 0.0.0.0:$PORT

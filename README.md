@@ -50,6 +50,8 @@ Key variables in `.env` (or your environment):
 - `EMAIL_HOST_USER`: SMTP username/login
 - `EMAIL_HOST_PASSWORD`: SMTP password or app password
 - `EMAIL_USE_TLS`: `True` for TLS with Gmail/most providers
+- `EMAIL_TIMEOUT`: SMTP socket timeout in seconds. Use a low value in production so requests do not hang on mail connectivity.
+- `EMAIL_SEND_ASYNC`: `True` to send branded emails in a background thread so login/reset flows return immediately.
 - `EMAIL_FAIL_SILENTLY`: keep as `True` in development so login never breaks if email setup is wrong
 
 ## Email Setup
@@ -77,6 +79,8 @@ EMAIL_LOGIN_USER=your-real-mailbox@gmail.com
 EMAIL_LOGIN_PASSWORD=your-app-password
 EMAIL_USE_TLS=True
 EMAIL_USE_SSL=False
+EMAIL_TIMEOUT=10
+EMAIL_SEND_ASYNC=True
 EMAIL_FAIL_SILENTLY=True
 DEFAULT_FROM_EMAIL=noreply@lulubingo.com
 ```
@@ -90,6 +94,7 @@ Notes:
 - `DEFAULT_FROM_EMAIL` is the visible sender address. It can be `noreply@lulubingo.com`, but your provider must allow that sender or verified alias/domain.
 - The visible sender address is configured by `DEFAULT_FROM_EMAIL`, but some providers only allow sending from verified domains or verified mailboxes.
 - If your provider rejects `noreply@lulubingo.com`, use a verified mailbox first and later switch to your domain after DNS/domain verification.
+- On Render or other platforms with strict request timeouts, keep `EMAIL_SEND_ASYNC=True` and use a small `EMAIL_TIMEOUT` like `10` so SMTP issues do not block login or password reset responses.
 
 ## Apps & Features
 
@@ -147,3 +152,16 @@ python manage.py runserver 0.0.0.0:8000
 - Missing deps: `pip install -r requirements.txt`
 - DB issues: verify `DATABASE_URL` or delete `db.sqlite3` for a fresh local DB (dev only).
 - Auth errors: ensure you log in via the login endpoint to get a token, and include `Authorization: Token <token>` in requests.
+
+## Render Deployment
+
+- Render must have a real `DATABASE_URL` set in the service environment. If `DATABASE_URL` is present, the app now uses PostgreSQL even when `DJANGO_ENV` is not explicitly set to `production`.
+- Do not wrap `DATABASE_URL` in quotes in Render environment variables.
+- Run migrations on deploy. This repo now includes [render.yaml](c:\Users\kiflay mehari\Documents\project\Bingo\LuluBingo_Back_End\render.yaml) with a start command that runs `python manage.py migrate` before Gunicorn starts.
+- If your Render service was already created manually, update its Start Command to:
+
+```bash
+python manage.py migrate && gunicorn lulu_bingo.wsgi:application --bind 0.0.0.0:$PORT
+```
+
+- If logs still mention `django.db.backends.sqlite3`, Render is not providing `DATABASE_URL` to the service or it is set on the wrong service.

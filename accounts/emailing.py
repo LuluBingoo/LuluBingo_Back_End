@@ -1,4 +1,5 @@
 import logging
+import threading
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -14,6 +15,19 @@ def _resolve_from_email() -> str:
 
 def _should_raise_email_errors() -> bool:
   return bool(getattr(settings, "EMAIL_RAISE_EXCEPTIONS", False))
+
+
+def _should_send_async() -> bool:
+  return bool(getattr(settings, "EMAIL_SEND_ASYNC", True))
+
+
+def _deliver_email(email: EmailMultiAlternatives, to_email: str) -> None:
+    try:
+        email.send(fail_silently=True)
+    except Exception as exc:
+        logger.warning("Email delivery skipped for %s: %s", to_email, exc)
+        if _should_raise_email_errors():
+            raise
 
 
 def send_branded_email(
@@ -83,10 +97,14 @@ def send_branded_email(
     )
     email.attach_alternative(html_body, "text/html")
 
-    try:
-        email.send(fail_silently=True)
-    except Exception as exc:
-        logger.warning("Email delivery skipped for %s: %s", to_email, exc)
-        if _should_raise_email_errors():
-            raise
-        return
+    if _should_send_async():
+      worker = threading.Thread(
+        target=_deliver_email,
+        args=(email, to_email),
+        daemon=True,
+        name="lulubingo-email",
+      )
+      worker.start()
+      return
+
+    _deliver_email(email, to_email)

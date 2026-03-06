@@ -993,7 +993,7 @@ class ShopBingoSessionCreateGameView(APIView):
         )
 
 
-class PublicGameCartellaView(APIView):
+class BasePublicGameCartellaView(APIView):
     permission_classes = [permissions.AllowAny]
 
     rate_limit_count = 30
@@ -1063,6 +1063,9 @@ class PublicGameCartellaView(APIView):
             "cartella_draw_sequence": game.cartella_draw_sequences[cartella_index],
         }
 
+
+class PublicGameCartellaCheckView(BasePublicGameCartellaView):
+
     @extend_schema(
         request=PublicCartellaLookupSerializer,
         responses={
@@ -1113,6 +1116,9 @@ class PublicGameCartellaView(APIView):
                 "created_at": game.created_at,
             }
         )
+
+
+class PublicGameCartellaView(BasePublicGameCartellaView):
 
     @extend_schema(
         responses={

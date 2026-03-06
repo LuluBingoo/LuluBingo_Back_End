@@ -11,6 +11,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 
+def get_env(name: str, default: str | None = None) -> str | None:
+    value = os.getenv(name, default)
+    if value is None:
+        return None
+    cleaned = value.strip()
+    if len(cleaned) >= 2 and cleaned[0] == cleaned[-1] and cleaned[0] in {"'", '"'}:
+        cleaned = cleaned[1:-1].strip()
+    return cleaned
+
+
 def str_to_bool(value: str | None, default: bool = False) -> bool:
     if value is None:
         return default
@@ -21,14 +31,14 @@ def str_to_bool(value: str | None, default: bool = False) -> bool:
 # Core settings
 # --------------------------------------------------
 
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
+SECRET_KEY = get_env("SECRET_KEY", "dev-secret-key-change-me")
 
-ENVIRONMENT = os.getenv("DJANGO_ENV", "development")
-DEBUG = str_to_bool(os.getenv("DEBUG"), default=ENVIRONMENT != "production")
+ENVIRONMENT = get_env("DJANGO_ENV", "development") or "development"
+DEBUG = str_to_bool(get_env("DEBUG"), default=ENVIRONMENT != "production")
 
 ALLOWED_HOSTS = [
     h.strip()
-    for h in os.getenv("ALLOWED_HOSTS", "*").split(",")
+    for h in (get_env("ALLOWED_HOSTS", "*") or "*").split(",")
     if h.strip()
 ]
 
@@ -40,7 +50,7 @@ ALLOWED_HOSTS = [
 CORS_ALLOW_ALL_ORIGINS = str_to_bool(os.getenv("CORS_ALLOW_ALL_ORIGINS"), default=False)
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
-    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    for origin in (get_env("CORS_ALLOWED_ORIGINS", "http://localhost:5173") or "http://localhost:5173").split(",")
     if origin.strip()
 ]
 CORS_ALLOW_CREDENTIALS = str_to_bool(os.getenv("CORS_ALLOW_CREDENTIALS"), default=True)
@@ -115,16 +125,16 @@ WSGI_APPLICATION = "lulu_bingo.wsgi.application"
 # Database
 # --------------------------------------------------
 
-if ENVIRONMENT == "production":
-    required = ["DATABASE_URL"]
-    missing = [key for key in required if not os.getenv(key)]
-    
-    if missing:
-        raise ValueError(
-            f"Missing database env vars for production: {', '.join(missing)}"
-        )
-    
-    tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
+database_url = get_env("DATABASE_URL")
+
+if database_url:
+    tmpPostgres = urlparse(database_url)
+
+    if tmpPostgres.scheme not in {"postgres", "postgresql"}:
+        raise ValueError("DATABASE_URL must use a postgres or postgresql scheme")
+
+    if not all([tmpPostgres.path, tmpPostgres.username, tmpPostgres.hostname]):
+        raise ValueError("DATABASE_URL is missing required PostgreSQL connection parts")
 
     DATABASES = {
         'default': {
@@ -133,10 +143,12 @@ if ENVIRONMENT == "production":
             'USER': tmpPostgres.username,
             'PASSWORD': tmpPostgres.password,
             'HOST': tmpPostgres.hostname,
-            'PORT': 5432,
+            'PORT': tmpPostgres.port or 5432,
             'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
         }
     }
+elif ENVIRONMENT == "production":
+    raise ValueError("DATABASE_URL is required in production")
 else:
     DATABASES = {
         "default": {
@@ -216,29 +228,30 @@ SPECTACULAR_SETTINGS = {
 # Email
 # --------------------------------------------------
 
-EMAIL_HOST = os.getenv("EMAIL_HOST", "")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
-EMAIL_HOST_USER = os.getenv("EMAIL_LOGIN_USER", os.getenv("EMAIL_HOST_USER", ""))
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_LOGIN_PASSWORD", os.getenv("EMAIL_HOST_PASSWORD", ""))
-EMAIL_USE_TLS = str_to_bool(os.getenv("EMAIL_USE_TLS"), True)
-EMAIL_USE_SSL = str_to_bool(os.getenv("EMAIL_USE_SSL"), False)
-EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "30"))
-EMAIL_FAIL_SILENTLY = str_to_bool(os.getenv("EMAIL_FAIL_SILENTLY"), True)
-EMAIL_RAISE_EXCEPTIONS = str_to_bool(os.getenv("EMAIL_RAISE_EXCEPTIONS"), False)
+EMAIL_HOST = get_env("EMAIL_HOST", "") or ""
+EMAIL_PORT = int(get_env("EMAIL_PORT", "587") or "587")
+EMAIL_HOST_USER = get_env("EMAIL_HOST_USER", "") or ""
+EMAIL_HOST_PASSWORD = get_env("EMAIL_HOST_PASSWORD", "") or ""
+EMAIL_HOST_USER = get_env("EMAIL_LOGIN_USER", EMAIL_HOST_USER) or ""
+EMAIL_HOST_PASSWORD = get_env("EMAIL_LOGIN_PASSWORD", EMAIL_HOST_PASSWORD) or ""
+EMAIL_USE_TLS = str_to_bool(get_env("EMAIL_USE_TLS"), True)
+EMAIL_USE_SSL = str_to_bool(get_env("EMAIL_USE_SSL"), False)
+EMAIL_TIMEOUT = int(get_env("EMAIL_TIMEOUT", "10") or "10")
+EMAIL_FAIL_SILENTLY = str_to_bool(get_env("EMAIL_FAIL_SILENTLY"), True)
+EMAIL_RAISE_EXCEPTIONS = str_to_bool(get_env("EMAIL_RAISE_EXCEPTIONS"), False)
+EMAIL_SEND_ASYNC = str_to_bool(get_env("EMAIL_SEND_ASYNC"), True)
 
 # Prefer SMTP when host is provided; otherwise fall back to console for local dev.
-EMAIL_BACKEND = os.getenv(
+EMAIL_BACKEND = get_env(
     "EMAIL_BACKEND",
     "django.core.mail.backends.smtp.EmailBackend" if EMAIL_HOST else "django.core.mail.backends.console.EmailBackend",
-)
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@lulubingo.com")
+) or ("django.core.mail.backends.smtp.EmailBackend" if EMAIL_HOST else "django.core.mail.backends.console.EmailBackend")
+DEFAULT_FROM_EMAIL = get_env("DEFAULT_FROM_EMAIL", "noreply@lulubingo.com") or "noreply@lulubingo.com"
 
 # Branded email presentation
-BRAND_NAME = os.getenv("BRAND_NAME", "LULU Bingo")
-BRAND_LOGO_URL = os.getenv("BRAND_LOGO_URL", "")
-APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:5173")
+BRAND_NAME = get_env("BRAND_NAME", "LULU Bingo") or "LULU Bingo"
+BRAND_LOGO_URL = get_env("BRAND_LOGO_URL", "") or ""
+APP_BASE_URL = get_env("APP_BASE_URL", "http://localhost:5173") or "http://localhost:5173"
 
 
 # --------------------------------------------------
