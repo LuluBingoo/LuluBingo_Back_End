@@ -11,6 +11,8 @@ class Game(models.Model):
     class Mode(models.TextChoices):
         STANDARD = "standard", "Standard"
         SHOP_FIXED4 = "shop_fixed4", "Shop Fixed 4"
+        SHOP_ONLINE = "shop_online", "Shop Online"
+        SHOP_OFFLINE = "shop_offline", "Shop Offline"
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -65,7 +67,7 @@ class Game(models.Model):
     def _ensure_game_code(self):
         if self.game_code:
             return
-        if self.game_mode == self.Mode.SHOP_FIXED4:
+        if self.game_mode in {self.Mode.SHOP_FIXED4, self.Mode.SHOP_ONLINE, self.Mode.SHOP_OFFLINE}:
             candidate = f"BINGO-{''.join(random.choices(string.ascii_uppercase + string.digits, k=5))}"
             while type(self).objects.filter(game_code=candidate).exists():
                 candidate = f"BINGO-{''.join(random.choices(string.ascii_uppercase + string.digits, k=5))}"
@@ -100,9 +102,14 @@ class ShopBingoSession(models.Model):
         LOCKED = "locked", "Locked"
         CANCELLED = "cancelled", "Cancelled"
 
+    class PlayMode(models.TextChoices):
+        ONLINE = "online", "Online"
+        OFFLINE = "offline", "Offline"
+
     shop = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="shop_bingo_sessions", on_delete=models.CASCADE)
     session_id = models.CharField(max_length=24, unique=True, editable=False)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.WAITING)
+    play_mode = models.CharField(max_length=20, choices=PlayMode.choices, default=PlayMode.ONLINE)
     fixed_players = models.PositiveSmallIntegerField(default=4)
     min_bet_per_cartella = models.DecimalField(max_digits=12, decimal_places=2, default=20)
     players_data = models.JSONField(default=list, blank=True)

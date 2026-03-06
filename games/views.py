@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 from transactions.models import Transaction
 from transactions.services import apply_transaction
 
+from .offline_cartellas import get_offline_cartella_board
 from .models import Game, ShopBingoSession
 from .serializers import (
     DetailResponseSerializer,
@@ -50,6 +51,7 @@ def _generate_cartella_board() -> list[int]:
     for min_n, max_n in ranges:
         col = random.sample(range(min_n, max_n + 1), 5)
         numbers.extend(col)
+    numbers[12] = 0
     return numbers
 
 
@@ -69,11 +71,14 @@ def _generate_unique_cartella_boards(count: int) -> list[list[int]]:
             raise ValueError("Failed to generate unique cartella boards")
 
         board = _generate_cartella_board()
-        if len(board) != 25 or len(set(board)) != 25:
+        non_zero_values = [number for number in board if number != 0]
+        if len(non_zero_values) != 24 or len(set(non_zero_values)) != 24:
+            continue
+        if board[12] != 0:
             continue
 
         signature = tuple(board)
-        value_signature = tuple(sorted(board))
+        value_signature = tuple(sorted(non_zero_values))
         if signature in signatures:
             continue
         if value_signature in value_signatures:
@@ -207,7 +212,16 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
     if len(set(all_cartella_numbers)) != len(all_cartella_numbers):
         raise ValueError("Duplicate cartella assignment detected")
 
-    cartella_boards = _generate_unique_cartella_boards(len(all_cartella_numbers))
+    if session.play_mode == ShopBingoSession.PlayMode.OFFLINE:
+        cartella_boards = [
+            get_offline_cartella_board(cartella_number)
+            for cartella_number in all_cartella_numbers
+        ]
+        game_mode = Game.Mode.SHOP_OFFLINE
+    else:
+        cartella_boards = _generate_unique_cartella_boards(len(all_cartella_numbers))
+        game_mode = Game.Mode.SHOP_ONLINE
+
     cartella_map = {str(cartella_number): index for index, cartella_number in enumerate(all_cartella_numbers)}
 
     feature_flags = session.shop.feature_flags if isinstance(session.shop.feature_flags, dict) else {}
@@ -229,7 +243,7 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
     with db_transaction.atomic():
         game = Game.objects.create(
             shop=session.shop,
-            game_mode=Game.Mode.SHOP_FIXED4,
+            game_mode=game_mode,
             bet_amount=session.min_bet_per_cartella,
             min_bet_per_cartella=session.min_bet_per_cartella,
             num_players=session.fixed_players,
@@ -735,6 +749,7 @@ class ShopBingoSessionCreateView(APIView):
 
         session = ShopBingoSession.objects.create(
             shop=request.user,
+            play_mode=serializer.validated_data.get("play_mode", ShopBingoSession.PlayMode.ONLINE),
             fixed_players=serializer.validated_data.get("fixed_players", 4),
             min_bet_per_cartella=serializer.validated_data["min_bet_per_cartella"],
         )
@@ -1031,7 +1046,7 @@ class PublicGameCartellaView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if game.game_mode == Game.Mode.SHOP_FIXED4:
+        if game.game_mode in {Game.Mode.SHOP_FIXED4, Game.Mode.SHOP_ONLINE, Game.Mode.SHOP_OFFLINE}:
             mapped_index = game.cartella_number_map.get(str(cartella_number))
             if mapped_index is None:
                 return Response({"detail": "Cartella not found"}, status=status.HTTP_404_NOT_FOUND)

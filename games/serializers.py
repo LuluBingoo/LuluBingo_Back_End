@@ -13,6 +13,8 @@ from transactions.services import TransactionError, apply_transaction
 
 
 class GameSerializer(serializers.ModelSerializer):
+    assigned_cartella_numbers = serializers.SerializerMethodField()
+
     class Meta:
         model = Game
         fields = [
@@ -24,6 +26,7 @@ class GameSerializer(serializers.ModelSerializer):
             "num_players",
             "win_amount",
             "cartella_numbers",
+            "assigned_cartella_numbers",
             "cartella_number_map",
             "cartella_draw_sequences",
             "draw_sequence",
@@ -47,6 +50,15 @@ class GameSerializer(serializers.ModelSerializer):
             "ended_at",
         ]
         read_only_fields = fields
+
+    def get_assigned_cartella_numbers(self, obj: Game) -> list[int]:
+        if isinstance(obj.cartella_number_map, dict) and obj.cartella_number_map:
+            ordered = sorted(
+                ((int(number), int(index)) for number, index in obj.cartella_number_map.items()),
+                key=lambda item: item[1],
+            )
+            return [number for number, _ in ordered]
+        return list(range(1, len(obj.cartella_numbers or []) + 1))
 
 
 class GameCreateSerializer(serializers.ModelSerializer):
@@ -222,7 +234,10 @@ class GameClaimSerializer(serializers.Serializer):
 
         called_set = set(called_numbers)
         cartella_numbers = game.cartella_numbers[cartella_index]
-        winning_numbers = list(cartella_numbers)
+        if len(cartella_numbers) == 25:
+            winning_numbers = [number for index, number in enumerate(cartella_numbers) if index != 12]
+        else:
+            winning_numbers = list(cartella_numbers)
 
         missing_numbers = [number for number in winning_numbers if number not in called_set]
         attrs["is_bingo"] = len(missing_numbers) == 0
@@ -238,6 +253,7 @@ class ShopBingoSessionSerializer(serializers.ModelSerializer):
         fields = [
             "session_id",
             "status",
+            "play_mode",
             "fixed_players",
             "min_bet_per_cartella",
             "players_data",
@@ -252,6 +268,7 @@ class ShopBingoSessionSerializer(serializers.ModelSerializer):
 class ShopBingoSessionCreateSerializer(serializers.Serializer):
     min_bet_per_cartella = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=Decimal("20.00"))
     fixed_players = serializers.IntegerField(required=False, min_value=2, max_value=7, default=4)
+    play_mode = serializers.ChoiceField(choices=ShopBingoSession.PlayMode.choices, required=False, default=ShopBingoSession.PlayMode.ONLINE)
 
     def validate_min_bet_per_cartella(self, value: Decimal):
         if value < Decimal("20.00"):
