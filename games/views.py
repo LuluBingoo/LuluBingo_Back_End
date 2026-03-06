@@ -31,6 +31,7 @@ from .serializers import (
     GameStartResponseSerializer,
     GameStateResponseSerializer,
     GameSerializer,
+    PublicCartellaLookupSerializer,
     PublicCartellaResponseSerializer,
     ShopBingoCartellaSelectSerializer,
     ShopBingoConfirmPaymentSerializer,
@@ -991,39 +992,31 @@ class ShopBingoSessionCreateGameView(APIView):
 class PublicGameCartellaView(APIView):
     permission_classes = [permissions.AllowAny]
 
-    @extend_schema(
-        responses={
-            200: PublicCartellaResponseSerializer,
-            400: DetailResponseSerializer,
-            404: DetailResponseSerializer,
-            429: OpenApiResponse(description="Rate limited"),
-        },
-        tags=["Games"],
-    )
-    def get(self, request, game_id: str, cartella_number: int):
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        client_ip = (
-            x_forwarded_for.split(",")[0].strip()
-            if x_forwarded_for
-            else request.META.get("REMOTE_ADDR", "unknown")
-        )
+    rate_limit_count = 30
+    rate_limit_window_seconds = 60
 
-        rate_limit_count = 30
-        rate_limit_window_seconds = 60
+    def _get_client_ip(self, request) -> str:
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR", "unknown")
+
+    def _enforce_rate_limit(self, request):
+        client_ip = self._get_client_ip(request)
         now_ts = timezone.now().timestamp()
         rate_key = f"public-cartella-rate:{client_ip}"
         request_timestamps = cache.get(rate_key, [])
         request_timestamps = [
             ts
             for ts in request_timestamps
-            if now_ts - float(ts) < rate_limit_window_seconds
+            if now_ts - float(ts) < self.rate_limit_window_seconds
         ]
 
-        if len(request_timestamps) >= rate_limit_count:
+        if len(request_timestamps) >= self.rate_limit_count:
             retry_after_seconds = max(
                 1,
                 math.ceil(
-                    rate_limit_window_seconds - (now_ts - float(request_timestamps[0]))
+                    self.rate_limit_window_seconds - (now_ts - float(request_timestamps[0]))
                 ),
             )
             return Response(
@@ -1036,7 +1029,57 @@ class PublicGameCartellaView(APIView):
             )
 
         request_timestamps.append(now_ts)
-        cache.set(rate_key, request_timestamps, timeout=rate_limit_window_seconds)
+        cache.set(rate_key, request_timestamps, timeout=self.rate_limit_window_seconds)
+        return None
+
+    def _resolve_cartella_index(self, game: Game, cartella_number: int) -> int | None:
+        if game.game_mode in {
+            Game.Mode.SHOP_FIXED4,
+            Game.Mode.SHOP_ONLINE,
+            Game.Mode.SHOP_OFFLINE,
+        }:
+            mapped_index = game.cartella_number_map.get(str(cartella_number))
+            if mapped_index is None:
+                return None
+            return int(mapped_index)
+
+        cartella_index = cartella_number - 1
+        if cartella_index < 0 or cartella_index >= len(game.cartella_numbers):
+            return None
+        return cartella_index
+
+    def _build_cartella_payload(self, game: Game, cartella_number: int):
+        cartella_index = self._resolve_cartella_index(game, cartella_number)
+        if cartella_index is None:
+            return None
+
+        return {
+            "cartella_number": cartella_number,
+            "cartella_numbers": game.cartella_numbers[cartella_index],
+            "cartella_draw_sequence": game.cartella_draw_sequences[cartella_index],
+        }
+
+    @extend_schema(
+        request=PublicCartellaLookupSerializer,
+        responses={
+            200: PublicCartellaResponseSerializer,
+            400: DetailResponseSerializer,
+            404: DetailResponseSerializer,
+            429: OpenApiResponse(description="Rate limited"),
+        },
+        tags=["Games"],
+        summary="Public cartella lookup",
+        description="Lookup one or more cartella boards for a public game by sending a game ID and an array of cartella numbers.",
+    )
+    def post(self, request):
+        rate_limit_response = self._enforce_rate_limit(request)
+        if rate_limit_response is not None:
+            return rate_limit_response
+
+        serializer = PublicCartellaLookupSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        game_id = serializer.validated_data["game_id"]
+        requested_cartella_numbers = serializer.validated_data["cartella_numbers"]
 
         game = get_object_or_404(Game, game_code=game_id)
 
@@ -1046,23 +1089,61 @@ class PublicGameCartellaView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if game.game_mode in {Game.Mode.SHOP_FIXED4, Game.Mode.SHOP_ONLINE, Game.Mode.SHOP_OFFLINE}:
-            mapped_index = game.cartella_number_map.get(str(cartella_number))
-            if mapped_index is None:
-                return Response({"detail": "Cartella not found"}, status=status.HTTP_404_NOT_FOUND)
-            cartella_index = int(mapped_index)
-        else:
-            cartella_index = cartella_number - 1
+        cartellas = []
+        missing_cartella_numbers = []
+        for cartella_number in requested_cartella_numbers:
+            payload = self._build_cartella_payload(game, cartella_number)
+            if payload is None:
+                missing_cartella_numbers.append(cartella_number)
+                continue
+            cartellas.append(payload)
 
-        if cartella_index < 0 or cartella_index >= len(game.cartella_numbers):
+        return Response(
+            {
+                "game_id": game.game_code,
+                "requested_cartella_numbers": requested_cartella_numbers,
+                "missing_cartella_numbers": missing_cartella_numbers,
+                "cartellas": cartellas,
+                "status": game.status,
+                "called_numbers": game.called_numbers or [],
+                "created_at": game.created_at,
+            }
+        )
+
+    @extend_schema(
+        responses={
+            200: PublicCartellaResponseSerializer,
+            400: DetailResponseSerializer,
+            404: DetailResponseSerializer,
+            429: OpenApiResponse(description="Rate limited"),
+        },
+        tags=["Games"],
+        summary="Public single-cartella lookup",
+        description="Legacy compatibility endpoint for looking up a single cartella by game ID and cartella number.",
+    )
+    def get(self, request, game_id: str, cartella_number: int):
+        rate_limit_response = self._enforce_rate_limit(request)
+        if rate_limit_response is not None:
+            return rate_limit_response
+
+        game = get_object_or_404(Game, game_code=game_id)
+
+        if game.status != Game.Status.ACTIVE:
+            return Response(
+                {"detail": "Game is not active"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        payload = self._build_cartella_payload(game, cartella_number)
+        if payload is None:
             return Response({"detail": "Cartella not found"}, status=status.HTTP_404_NOT_FOUND)
 
         return Response(
             {
                 "game_id": game.game_code,
-                "cartella_number": cartella_number,
-                "cartella_numbers": game.cartella_numbers[cartella_index],
-                "cartella_draw_sequence": game.cartella_draw_sequences[cartella_index],
+                "requested_cartella_numbers": [cartella_number],
+                "missing_cartella_numbers": [],
+                "cartellas": [payload],
                 "status": game.status,
                 "called_numbers": game.called_numbers or [],
                 "created_at": game.created_at,

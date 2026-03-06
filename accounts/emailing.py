@@ -1,10 +1,19 @@
+import logging
+
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.utils.html import escape
 
 
+logger = logging.getLogger(__name__)
+
+
 def _resolve_from_email() -> str:
-    return getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@lulu-bingo.local")
+  return getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@lulubingo.com")
+
+
+def _should_raise_email_errors() -> bool:
+  return bool(getattr(settings, "EMAIL_RAISE_EXCEPTIONS", False))
 
 
 def send_branded_email(
@@ -26,10 +35,10 @@ def send_branded_email(
 
     logo_html = ""
     if brand_logo_url:
-      logo_html = (
-        f'<img src="{escape(brand_logo_url)}" alt="{escape(brand_name)} logo" '
-        'style="height:40px;width:auto;display:block;margin-bottom:10px;" />'
-      )
+        logo_html = (
+            f'<img src="{escape(brand_logo_url)}" alt="{escape(brand_name)} logo" '
+            'style="height:40px;width:auto;display:block;margin-bottom:10px;" />'
+        )
 
     cta_html = ""
     if cta_text and cta_url:
@@ -73,4 +82,11 @@ def send_branded_email(
         to=[to_email],
     )
     email.attach_alternative(html_body, "text/html")
-    email.send(fail_silently=getattr(settings, "EMAIL_FAIL_SILENTLY", False))
+
+    try:
+        email.send(fail_silently=True)
+    except Exception as exc:
+        logger.warning("Email delivery skipped for %s: %s", to_email, exc)
+        if _should_raise_email_errors():
+            raise
+        return

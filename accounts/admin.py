@@ -81,7 +81,6 @@ class ShopUserAdmin(UserAdmin):
             request,
             queryset,
             status=ShopUser.Status.ACTIVE,
-            must_change_password=False,
         )
         self.message_user(request, f"Activated {updated} shop(s).")
 

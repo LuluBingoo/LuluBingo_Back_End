@@ -37,5 +37,6 @@ urlpatterns = [
     path("games/<str:code>/cartellas/<int:cartella_number>/draw", GameCartellaDrawView.as_view(), name="game-cartella-draw"),
     path("games/<str:code>/claim", GameClaimView.as_view(), name="game-claim"),
     path("games/<str:code>/complete", GameCompleteView.as_view(), name="game-complete"),
+    path("game/cartellas/check", PublicGameCartellaView.as_view(), name="public-game-cartella-check"),
     path("game/<str:game_id>/cartella/<int:cartella_number>", PublicGameCartellaView.as_view(), name="public-game-cartella"),
 ]

@@ -220,6 +220,10 @@ class ChangePasswordSerializer(serializers.Serializer):
 class AuthTokenResponseSerializer(serializers.Serializer):
     token = serializers.CharField()
     requires_password_change = serializers.BooleanField()
+    missing_profile_fields = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+    )
     user = ShopUserSerializer(read_only=True)
 
 
@@ -280,9 +284,18 @@ class ShopProfileSerializer(serializers.ModelSerializer):
 
         instance = self.instance or ShopUser()
         errors: dict[str, str] = {}
-        required_fields = ["contact_email", "contact_phone"]
+        required_fields = [
+            "name",
+            "contact_email",
+            "contact_phone",
+            "bank_name",
+            "bank_account_name",
+            "bank_account_number",
+        ]
         for field in required_fields:
             value = attrs.get(field, getattr(instance, field, ""))
+            if isinstance(value, str):
+                value = value.strip()
             if not value:
                 errors[field] = "This field is required to finalize your profile."
 
@@ -325,7 +338,10 @@ class ShopProfileSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
 
         if profile_completion_fields.intersection(validated_data.keys()):
-            instance.profile_completed = True
+            instance.profile_completed = all(
+                bool(str(getattr(instance, field_name, "")).strip())
+                for field_name in profile_completion_fields
+            )
 
         instance.save()
         return instance

@@ -220,17 +220,20 @@ EMAIL_HOST = os.getenv("EMAIL_HOST", "")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_HOST_USER = os.getenv("EMAIL_LOGIN_USER", os.getenv("EMAIL_HOST_USER", ""))
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_LOGIN_PASSWORD", os.getenv("EMAIL_HOST_PASSWORD", ""))
 EMAIL_USE_TLS = str_to_bool(os.getenv("EMAIL_USE_TLS"), True)
 EMAIL_USE_SSL = str_to_bool(os.getenv("EMAIL_USE_SSL"), False)
 EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "30"))
-EMAIL_FAIL_SILENTLY = str_to_bool(os.getenv("EMAIL_FAIL_SILENTLY"), False)
+EMAIL_FAIL_SILENTLY = str_to_bool(os.getenv("EMAIL_FAIL_SILENTLY"), True)
+EMAIL_RAISE_EXCEPTIONS = str_to_bool(os.getenv("EMAIL_RAISE_EXCEPTIONS"), False)
 
 # Prefer SMTP when host is provided; otherwise fall back to console for local dev.
 EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND",
     "django.core.mail.backends.smtp.EmailBackend" if EMAIL_HOST else "django.core.mail.backends.console.EmailBackend",
 )
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@lulu-bingo.local")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@lulubingo.com")
 
 # Branded email presentation
 BRAND_NAME = os.getenv("BRAND_NAME", "LULU Bingo")

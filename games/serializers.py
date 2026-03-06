@@ -358,6 +358,33 @@ class GameCartellaDrawResponseSerializer(serializers.Serializer):
     cartella_draw_sequence = serializers.ListField(child=serializers.IntegerField())
 
 
+class PublicCartellaLookupSerializer(serializers.Serializer):
+    game_id = serializers.CharField()
+    cartella_numbers = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        allow_empty=False,
+    )
+
+    def validate_game_id(self, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise serializers.ValidationError("Game ID is required.")
+        return normalized
+
+    def validate_cartella_numbers(self, value: list[int]) -> list[int]:
+        if len(value) > 50:
+            raise serializers.ValidationError("You can check up to 50 cartellas per request.")
+
+        normalized: list[int] = []
+        seen: set[int] = set()
+        for number in value:
+            if number in seen:
+                continue
+            seen.add(number)
+            normalized.append(number)
+        return normalized
+
+
 class GameClaimResponseSerializer(serializers.Serializer):
     game_code = serializers.CharField()
     cartella_index = serializers.IntegerField()
@@ -381,11 +408,17 @@ class ShopBingoSessionGameResponseSerializer(serializers.Serializer):
     game = GameSerializer(required=False)
 
 
-class PublicCartellaResponseSerializer(serializers.Serializer):
-    game_id = serializers.CharField()
+class PublicCartellaItemSerializer(serializers.Serializer):
     cartella_number = serializers.IntegerField()
     cartella_numbers = serializers.ListField(child=serializers.IntegerField())
     cartella_draw_sequence = serializers.ListField(child=serializers.IntegerField())
+
+
+class PublicCartellaResponseSerializer(serializers.Serializer):
+    game_id = serializers.CharField()
+    requested_cartella_numbers = serializers.ListField(child=serializers.IntegerField())
+    missing_cartella_numbers = serializers.ListField(child=serializers.IntegerField())
+    cartellas = PublicCartellaItemSerializer(many=True)
     status = serializers.ChoiceField(choices=Game.Status.choices)
     called_numbers = serializers.ListField(child=serializers.IntegerField())
     created_at = serializers.DateTimeField()

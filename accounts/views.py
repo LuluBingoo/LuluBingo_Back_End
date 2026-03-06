@@ -61,6 +61,35 @@ def _send_security_email(user, subject: str, message: str):
     )
 
 
+def _get_missing_profile_fields(user) -> list[str]:
+    if not user:
+        return []
+
+    required_fields = [
+        "name",
+        "contact_email",
+        "contact_phone",
+        "bank_name",
+        "bank_account_name",
+        "bank_account_number",
+    ]
+    missing_fields: list[str] = []
+
+    for field_name in required_fields:
+        value = getattr(user, field_name, None)
+        if isinstance(value, str):
+            value = value.strip()
+        if not value:
+            missing_fields.append(field_name)
+
+    profile_completed = len(missing_fields) == 0
+    if user.profile_completed != profile_completed:
+        user.profile_completed = profile_completed
+        user.save(update_fields=["profile_completed"])
+
+    return missing_fields
+
+
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -81,6 +110,7 @@ class LoginView(APIView):
         user = serializer.validated_data["user"]
         token, _ = Token.objects.get_or_create(user=user)
         _record_attempt(user.username, True, request, user=user)
+        missing_profile_fields = _get_missing_profile_fields(user)
         _send_security_email(
             user,
             "Login notification",
@@ -91,6 +121,7 @@ class LoginView(APIView):
                 "token": token.key,
                 "user": ShopUserSerializer(user).data,
                 "requires_password_change": user.must_change_password,
+                "missing_profile_fields": missing_profile_fields,
             }
         )
 
@@ -155,6 +186,7 @@ class ChangePasswordView(APIView):
                 "token": new_token.key,
                 "user": ShopUserSerializer(user).data,
                 "requires_password_change": user.must_change_password,
+                "missing_profile_fields": _get_missing_profile_fields(user),
             }
         )
 

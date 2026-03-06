@@ -14,6 +14,7 @@ class GameTests(APITestCase):
             password="pass1234",
             name="Game Shop",
             contact_email="shop@example.com",
+            contact_phone="0911000000",
         )
         self.shop.status = ShopUser.Status.ACTIVE
         self.shop.must_change_password = False
@@ -145,15 +146,51 @@ class GameTests(APITestCase):
         }
         create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
         code = create_resp.data["game_code"]
+        game = Game.objects.get(game_code=code)
+        game.status = Game.Status.ACTIVE
+        game.save(update_fields=["status"])
 
         # public endpoint requires no auth
-        cartella_resp = self.client.get(reverse("game-cartella-draw", args=[code, 2]))
+        cartella_resp = self.client.get(reverse("public-game-cartella", args=[code, 2]))
         self.assertEqual(cartella_resp.status_code, status.HTTP_200_OK)
-        self.assertEqual(cartella_resp.data["cartella_number"], 2)
-        self.assertEqual(cartella_resp.data["cartella_numbers"], [4, 5, 6])
-        self.assertEqual(len(cartella_resp.data["cartella_draw_sequence"]), 75)
+        self.assertEqual(cartella_resp.data["requested_cartella_numbers"], [2])
+        self.assertEqual(cartella_resp.data["cartellas"][0]["cartella_number"], 2)
+        self.assertEqual(cartella_resp.data["cartellas"][0]["cartella_numbers"], [4, 5, 6])
+        self.assertEqual(len(cartella_resp.data["cartellas"][0]["cartella_draw_sequence"]), 75)
 
-    def test_public_cartella_draw_out_of_range(self):
+    def test_public_cartella_lookup_multiple(self):
+        headers = self.auth_headers()
+        payload = {
+            "bet_amount": "10.00",
+            "num_players": 1,
+            "win_amount": "50.00",
+            "cartella_numbers": [[1, 2, 3], [4, 5, 6]],
+        }
+        create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
+        code = create_resp.data["game_code"]
+        game = Game.objects.get(game_code=code)
+        game.status = Game.Status.ACTIVE
+        game.called_numbers = [1, 2, 5]
+        game.save(update_fields=["status", "called_numbers"])
+
+        resp = self.client.post(
+            reverse("public-game-cartella-check"),
+            {
+                "game_id": code,
+                "cartella_numbers": [2, 5, 1, 2],
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["game_id"], code)
+        self.assertEqual(resp.data["requested_cartella_numbers"], [2, 5, 1])
+        self.assertEqual(resp.data["missing_cartella_numbers"], [5])
+        self.assertEqual(resp.data["called_numbers"], [1, 2, 5])
+        self.assertEqual(len(resp.data["cartellas"]), 2)
+        self.assertEqual(resp.data["cartellas"][0]["cartella_number"], 2)
+        self.assertEqual(resp.data["cartellas"][1]["cartella_number"], 1)
+
+    def test_public_cartella_lookup_requires_active_game(self):
         headers = self.auth_headers()
         payload = {
             "bet_amount": "10.00",
@@ -163,9 +200,19 @@ class GameTests(APITestCase):
         }
         create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
         code = create_resp.data["game_code"]
+        game = Game.objects.get(game_code=code)
+        game.status = Game.Status.PENDING
+        game.save(update_fields=["status"])
 
-        resp = self.client.get(reverse("game-cartella-draw", args=[code, 5]))
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        resp = self.client.post(
+            reverse("public-game-cartella-check"),
+            {
+                "game_id": code,
+                "cartella_numbers": [1],
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_claim_validates_bingo(self):
         headers = self.auth_headers()
@@ -177,6 +224,7 @@ class GameTests(APITestCase):
         }
         create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
         code = create_resp.data["game_code"]
+        game = Game.objects.get(game_code=code)
 
         losing_claim = self.client.post(
             reverse("game-claim", args=[code]),
@@ -187,16 +235,26 @@ class GameTests(APITestCase):
         self.assertEqual(losing_claim.status_code, status.HTTP_200_OK)
         self.assertFalse(losing_claim.data["is_bingo"])
 
-        winning_numbers = [number for idx, number in enumerate(range(1, 26)) if idx != 12]
+        winning_create_resp = self.client.post(
+            reverse("games"),
+            payload,
+            format="json",
+            **headers,
+        )
+        winning_code = winning_create_resp.data["game_code"]
+        winning_game = Game.objects.get(game_code=winning_code)
+        winning_numbers = [1, 6, 11, 16, 21]
+        winning_game.called_numbers = winning_numbers
+        winning_game.save(update_fields=["called_numbers"])
         winning_claim = self.client.post(
-            reverse("game-claim", args=[code]),
+            reverse("game-claim", args=[winning_code]),
             {"cartella_index": 0, "called_numbers": winning_numbers},
             format="json",
             **headers,
         )
         self.assertEqual(winning_claim.status_code, status.HTTP_200_OK)
         self.assertTrue(winning_claim.data["is_bingo"])
-        self.assertEqual(winning_claim.data["required_count"], 24)
+        self.assertEqual(winning_claim.data["pattern"], "row")
 
     def test_game_transactions_created(self):
         headers = self.auth_headers()
@@ -294,7 +352,7 @@ class GameTests(APITestCase):
 
         self.assertIsNotNone(created_game_code)
         game = Game.objects.get(game_code=created_game_code)
-        self.assertEqual(game.game_mode, Game.Mode.SHOP_FIXED4)
+        self.assertEqual(game.game_mode, Game.Mode.SHOP_ONLINE)
         self.assertEqual(game.num_players, 4)
 
         session = ShopBingoSession.objects.get(session_id=session_id)
