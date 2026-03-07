@@ -72,7 +72,7 @@ def main() -> None:
     for idx, board in enumerate(catalog, start=1):
         lines.append(f"## Cartella {idx}")
         lines.append("")
-        lines.append("| 1 | 2 | 3 | 4 | 5 |")
+        lines.append("| B | I | N | G | O |")
         lines.append("|---|---|---|---|---|")
         for row in range(5):
             row_values: list[str] = []

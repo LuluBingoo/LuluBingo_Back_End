@@ -12,7 +12,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 1
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 6 | 10 | 4 | 50 | 59 |
 | 28 | 9 | 33 | 1 | 13 |
@@ -22,7 +22,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 2
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 19 | 52 | 49 | 65 | 47 |
 | 57 | 69 | 22 | 14 | 27 |
@@ -32,7 +32,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 3
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 30 | 52 | 7 | 39 | 69 |
 | 36 | 29 | 15 | 5 | 66 |
@@ -42,7 +42,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 4
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 52 | 46 | 75 | 31 | 38 |
 | 57 | 28 | 62 | 50 | 71 |
@@ -52,7 +52,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 5
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 44 | 34 | 26 | 8 | 51 |
 | 20 | 3 | 16 | 12 | 31 |
@@ -62,7 +62,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 6
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 2 | 55 | 34 | 20 | 46 |
 | 9 | 32 | 11 | 41 | 43 |
@@ -72,7 +72,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 7
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 66 | 5 | 49 | 69 | 40 |
 | 4 | 9 | 57 | 21 | 61 |
@@ -82,7 +82,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 8
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 13 | 24 | 59 | 58 | 32 |
 | 56 | 39 | 14 | 48 | 42 |
@@ -92,7 +92,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 9
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 53 | 64 | 57 | 35 | 9 |
 | 34 | 24 | 32 | 58 | 62 |
@@ -102,7 +102,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 10
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 23 | 45 | 25 | 32 | 53 |
 | 17 | 48 | 14 | 31 | 22 |
@@ -112,7 +112,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 11
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 71 | 13 | 60 | 56 | 41 |
 | 43 | 61 | 68 | 7 | 73 |
@@ -122,7 +122,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 12
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 10 | 16 | 18 | 61 | 36 |
 | 38 | 66 | 67 | 40 | 6 |
@@ -132,7 +132,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 13
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 34 | 24 | 36 | 72 | 37 |
 | 64 | 11 | 44 | 2 | 45 |
@@ -142,7 +142,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 14
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 63 | 9 | 27 | 50 | 38 |
 | 58 | 64 | 22 | 28 | 56 |
@@ -152,7 +152,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 15
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 14 | 67 | 68 | 37 | 19 |
 | 6 | 16 | 53 | 71 | 39 |
@@ -162,7 +162,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 16
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 75 | 66 | 12 | 53 | 19 |
 | 28 | 46 | 42 | 61 | 55 |
@@ -172,7 +172,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 17
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 56 | 7 | 50 | 46 | 31 |
 | 23 | 13 | 71 | 20 | 70 |
@@ -182,7 +182,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 18
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 17 | 8 | 67 | 39 | 72 |
 | 2 | 66 | 22 | 74 | 65 |
@@ -192,7 +192,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 19
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 44 | 30 | 63 | 48 | 73 |
 | 51 | 69 | 1 | 62 | 70 |
@@ -202,7 +202,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 20
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 74 | 34 | 11 | 58 | 2 |
 | 75 | 25 | 5 | 71 | 23 |
@@ -212,7 +212,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 21
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 9 | 31 | 55 | 29 | 74 |
 | 33 | 15 | 6 | 40 | 26 |
@@ -222,7 +222,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 22
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 46 | 9 | 37 | 11 | 24 |
 | 7 | 3 | 12 | 56 | 48 |
@@ -232,7 +232,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 23
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 6 | 56 | 64 | 7 | 58 |
 | 37 | 68 | 18 | 21 | 65 |
@@ -242,7 +242,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 24
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 38 | 59 | 24 | 58 | 28 |
 | 19 | 70 | 35 | 13 | 60 |
@@ -252,7 +252,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 25
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 58 | 9 | 41 | 26 | 63 |
 | 6 | 1 | 25 | 62 | 72 |
@@ -262,7 +262,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 26
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 32 | 4 | 40 | 58 | 17 |
 | 63 | 60 | 19 | 27 | 75 |
@@ -272,7 +272,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 27
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 50 | 27 | 39 | 32 | 54 |
 | 11 | 10 | 56 | 71 | 3 |
@@ -282,7 +282,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 28
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 48 | 22 | 45 | 62 | 60 |
 | 42 | 18 | 1 | 67 | 19 |
@@ -292,7 +292,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 29
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 10 | 24 | 35 | 45 | 32 |
 | 16 | 75 | 62 | 36 | 25 |
@@ -302,7 +302,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 30
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 12 | 73 | 50 | 24 | 72 |
 | 57 | 7 | 41 | 27 | 75 |
@@ -312,7 +312,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 31
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 31 | 7 | 1 | 15 | 73 |
 | 49 | 67 | 25 | 23 | 35 |
@@ -322,7 +322,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 32
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 46 | 6 | 67 | 47 | 16 |
 | 75 | 20 | 65 | 69 | 28 |
@@ -332,7 +332,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 33
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 61 | 74 | 73 | 2 | 12 |
 | 43 | 31 | 38 | 19 | 46 |
@@ -342,7 +342,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 34
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 33 | 6 | 26 | 54 | 31 |
 | 41 | 46 | 1 | 17 | 39 |
@@ -352,7 +352,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 35
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 37 | 44 | 18 | 70 | 65 |
 | 55 | 48 | 47 | 33 | 67 |
@@ -362,7 +362,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 36
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 21 | 30 | 11 | 13 | 65 |
 | 39 | 20 | 24 | 33 | 75 |
@@ -372,7 +372,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 37
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 9 | 61 | 14 | 59 | 75 |
 | 57 | 23 | 74 | 39 | 1 |
@@ -382,7 +382,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 38
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 14 | 73 | 35 | 72 | 61 |
 | 71 | 37 | 39 | 28 | 2 |
@@ -392,7 +392,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 39
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 12 | 7 | 34 | 39 | 4 |
 | 6 | 15 | 10 | 65 | 5 |
@@ -402,7 +402,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 40
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 60 | 14 | 50 | 26 | 42 |
 | 51 | 18 | 8 | 11 | 3 |
@@ -412,7 +412,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 41
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 42 | 75 | 28 | 33 | 69 |
 | 71 | 5 | 18 | 19 | 37 |
@@ -422,7 +422,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 42
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 30 | 21 | 41 | 26 | 2 |
 | 1 | 74 | 29 | 38 | 48 |
@@ -432,7 +432,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 43
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 30 | 47 | 40 | 2 | 75 |
 | 66 | 39 | 13 | 72 | 46 |
@@ -442,7 +442,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 44
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 32 | 51 | 59 | 52 | 7 |
 | 64 | 75 | 62 | 71 | 69 |
@@ -452,7 +452,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 45
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 69 | 70 | 24 | 56 | 22 |
 | 17 | 39 | 31 | 50 | 9 |
@@ -462,7 +462,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 46
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 54 | 10 | 59 | 5 | 36 |
 | 8 | 13 | 57 | 48 | 32 |
@@ -472,7 +472,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 47
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 13 | 53 | 15 | 21 | 64 |
 | 45 | 73 | 49 | 20 | 24 |
@@ -482,7 +482,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 48
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 14 | 67 | 3 | 28 | 8 |
 | 51 | 41 | 70 | 34 | 63 |
@@ -492,7 +492,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 49
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 20 | 47 | 49 | 35 | 16 |
 | 1 | 39 | 71 | 62 | 69 |
@@ -502,7 +502,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 50
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 33 | 31 | 21 | 46 | 56 |
 | 50 | 62 | 15 | 73 | 22 |
@@ -512,7 +512,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 51
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 15 | 14 | 33 | 27 | 44 |
 | 24 | 57 | 17 | 23 | 30 |
@@ -522,7 +522,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 52
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 69 | 57 | 37 | 64 | 34 |
 | 73 | 74 | 32 | 72 | 43 |
@@ -532,7 +532,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 53
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 35 | 25 | 30 | 39 | 26 |
 | 44 | 64 | 20 | 41 | 33 |
@@ -542,7 +542,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 54
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 5 | 48 | 47 | 59 | 10 |
 | 36 | 25 | 71 | 38 | 61 |
@@ -552,7 +552,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 55
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 44 | 48 | 63 | 59 | 16 |
 | 60 | 19 | 58 | 9 | 24 |
@@ -562,7 +562,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 56
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 9 | 29 | 31 | 36 | 14 |
 | 49 | 28 | 69 | 32 | 19 |
@@ -572,7 +572,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 57
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 54 | 12 | 39 | 51 | 27 |
 | 1 | 43 | 28 | 42 | 26 |
@@ -582,7 +582,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 58
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 16 | 4 | 1 | 48 | 13 |
 | 20 | 53 | 68 | 38 | 73 |
@@ -592,7 +592,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 59
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 70 | 15 | 25 | 59 | 52 |
 | 72 | 10 | 67 | 41 | 56 |
@@ -602,7 +602,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 60
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 47 | 64 | 71 | 3 | 12 |
 | 34 | 55 | 24 | 56 | 10 |
@@ -612,7 +612,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 61
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 60 | 58 | 22 | 75 | 69 |
 | 4 | 42 | 24 | 40 | 35 |
@@ -622,7 +622,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 62
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 37 | 72 | 16 | 21 | 65 |
 | 69 | 5 | 29 | 18 | 4 |
@@ -632,7 +632,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 63
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 54 | 56 | 35 | 14 | 3 |
 | 53 | 51 | 47 | 10 | 64 |
@@ -642,7 +642,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 64
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 35 | 12 | 19 | 3 | 37 |
 | 14 | 57 | 67 | 40 | 26 |
@@ -652,7 +652,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 65
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 73 | 29 | 70 | 59 | 47 |
 | 31 | 15 | 22 | 4 | 16 |
@@ -662,7 +662,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 66
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 32 | 36 | 6 | 48 | 8 |
 | 3 | 39 | 4 | 49 | 72 |
@@ -672,7 +672,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 67
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 14 | 34 | 72 | 39 | 12 |
 | 47 | 41 | 25 | 20 | 29 |
@@ -682,7 +682,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 68
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 31 | 13 | 56 | 35 | 46 |
 | 18 | 53 | 5 | 27 | 42 |
@@ -692,7 +692,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 69
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 25 | 24 | 33 | 17 | 49 |
 | 7 | 34 | 65 | 9 | 52 |
@@ -702,7 +702,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 70
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 70 | 42 | 30 | 23 | 33 |
 | 14 | 65 | 74 | 17 | 22 |
@@ -712,7 +712,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 71
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 10 | 40 | 15 | 38 | 37 |
 | 66 | 22 | 54 | 51 | 9 |
@@ -722,7 +722,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 72
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 71 | 55 | 19 | 43 | 36 |
 | 45 | 34 | 41 | 58 | 64 |
@@ -732,7 +732,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 73
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 66 | 53 | 11 | 4 | 38 |
 | 12 | 54 | 14 | 7 | 62 |
@@ -742,7 +742,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 74
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 10 | 21 | 7 | 5 | 48 |
 | 27 | 42 | 73 | 55 | 45 |
@@ -752,7 +752,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 75
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 71 | 67 | 17 | 37 | 53 |
 | 52 | 73 | 8 | 32 | 50 |
@@ -762,7 +762,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 76
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 39 | 51 | 65 | 29 | 73 |
 | 38 | 2 | 62 | 50 | 41 |
@@ -772,7 +772,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 77
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 47 | 33 | 72 | 20 | 73 |
 | 11 | 28 | 36 | 24 | 63 |
@@ -782,7 +782,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 78
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 12 | 26 | 74 | 62 | 7 |
 | 20 | 31 | 70 | 4 | 3 |
@@ -792,7 +792,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 79
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 36 | 68 | 3 | 10 | 72 |
 | 23 | 73 | 41 | 33 | 61 |
@@ -802,7 +802,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 80
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 50 | 49 | 31 | 20 | 1 |
 | 32 | 10 | 24 | 46 | 3 |
@@ -812,7 +812,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 81
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 11 | 38 | 53 | 20 | 51 |
 | 73 | 45 | 28 | 40 | 56 |
@@ -822,7 +822,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 82
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 55 | 13 | 23 | 47 | 61 |
 | 10 | 75 | 1 | 64 | 18 |
@@ -832,7 +832,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 83
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 10 | 6 | 28 | 34 | 43 |
 | 72 | 65 | 11 | 13 | 26 |
@@ -842,7 +842,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 84
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 30 | 52 | 34 | 4 | 36 |
 | 60 | 45 | 12 | 24 | 13 |
@@ -852,7 +852,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 85
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 68 | 14 | 31 | 65 | 32 |
 | 66 | 63 | 61 | 1 | 12 |
@@ -862,7 +862,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 86
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 28 | 51 | 75 | 29 | 25 |
 | 43 | 12 | 69 | 2 | 55 |
@@ -872,7 +872,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 87
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 27 | 4 | 16 | 8 | 11 |
 | 62 | 52 | 34 | 54 | 25 |
@@ -882,7 +882,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 88
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 6 | 18 | 28 | 44 | 4 |
 | 10 | 51 | 30 | 21 | 32 |
@@ -892,7 +892,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 89
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 67 | 40 | 48 | 71 | 46 |
 | 14 | 11 | 31 | 74 | 57 |
@@ -902,7 +902,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 90
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 6 | 34 | 5 | 28 | 12 |
 | 23 | 8 | 74 | 66 | 48 |
@@ -912,7 +912,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 91
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 57 | 41 | 71 | 20 | 23 |
 | 37 | 65 | 13 | 75 | 8 |
@@ -922,7 +922,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 92
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 55 | 29 | 62 | 11 | 23 |
 | 66 | 17 | 18 | 45 | 38 |
@@ -932,7 +932,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 93
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 61 | 1 | 69 | 32 | 53 |
 | 6 | 5 | 48 | 26 | 30 |
@@ -942,7 +942,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 94
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 2 | 36 | 70 | 11 | 69 |
 | 37 | 73 | 61 | 68 | 19 |
@@ -952,7 +952,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 95
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 58 | 13 | 49 | 52 | 15 |
 | 51 | 62 | 73 | 29 | 71 |
@@ -962,7 +962,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 96
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 3 | 8 | 22 | 9 | 71 |
 | 17 | 19 | 65 | 52 | 56 |
@@ -972,7 +972,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 97
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 60 | 49 | 13 | 37 | 51 |
 | 53 | 3 | 55 | 44 | 41 |
@@ -982,7 +982,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 98
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 50 | 11 | 34 | 58 | 18 |
 | 29 | 57 | 44 | 70 | 32 |
@@ -992,7 +992,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 99
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 19 | 54 | 45 | 26 | 49 |
 | 15 | 27 | 22 | 56 | 40 |
@@ -1002,7 +1002,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 100
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 2 | 10 | 27 | 18 | 4 |
 | 25 | 37 | 47 | 52 | 44 |
@@ -1012,7 +1012,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 101
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 8 | 46 | 62 | 14 | 67 |
 | 24 | 21 | 61 | 74 | 10 |
@@ -1022,7 +1022,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 102
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 42 | 75 | 59 | 11 | 62 |
 | 49 | 65 | 66 | 48 | 24 |
@@ -1032,7 +1032,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 103
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 66 | 27 | 44 | 75 | 49 |
 | 62 | 67 | 38 | 34 | 59 |
@@ -1042,7 +1042,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 104
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 44 | 53 | 68 | 67 | 47 |
 | 12 | 58 | 29 | 36 | 23 |
@@ -1052,7 +1052,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 105
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 17 | 36 | 9 | 46 | 73 |
 | 55 | 58 | 19 | 4 | 21 |
@@ -1062,7 +1062,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 106
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 53 | 50 | 20 | 39 | 59 |
 | 36 | 64 | 44 | 38 | 69 |
@@ -1072,7 +1072,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 107
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 54 | 60 | 41 | 25 | 73 |
 | 72 | 64 | 53 | 28 | 69 |
@@ -1082,7 +1082,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 108
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 14 | 23 | 50 | 61 | 67 |
 | 38 | 41 | 34 | 55 | 58 |
@@ -1092,7 +1092,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 109
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 6 | 5 | 17 | 3 | 63 |
 | 31 | 10 | 40 | 49 | 65 |
@@ -1102,7 +1102,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 110
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 10 | 55 | 39 | 24 | 70 |
 | 7 | 1 | 35 | 3 | 19 |
@@ -1112,7 +1112,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 111
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 48 | 7 | 58 | 42 | 74 |
 | 41 | 8 | 17 | 56 | 35 |
@@ -1122,7 +1122,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 112
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 22 | 7 | 37 | 34 | 74 |
 | 26 | 36 | 33 | 55 | 49 |
@@ -1132,7 +1132,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 113
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 29 | 9 | 24 | 6 | 66 |
 | 16 | 26 | 42 | 14 | 57 |
@@ -1142,7 +1142,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 114
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 9 | 17 | 70 | 29 | 71 |
 | 15 | 74 | 61 | 73 | 66 |
@@ -1152,7 +1152,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 115
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 14 | 28 | 17 | 22 | 70 |
 | 11 | 52 | 1 | 67 | 5 |
@@ -1162,7 +1162,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 116
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 18 | 12 | 28 | 74 | 6 |
 | 26 | 11 | 16 | 21 | 8 |
@@ -1172,7 +1172,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 117
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 11 | 10 | 4 | 58 | 24 |
 | 67 | 47 | 17 | 22 | 43 |
@@ -1182,7 +1182,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 118
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 28 | 6 | 70 | 53 | 4 |
 | 19 | 50 | 48 | 42 | 37 |
@@ -1192,7 +1192,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 119
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 21 | 39 | 55 | 35 | 4 |
 | 1 | 31 | 62 | 17 | 10 |
@@ -1202,7 +1202,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 120
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 27 | 73 | 12 | 37 | 38 |
 | 62 | 18 | 8 | 33 | 11 |
@@ -1212,7 +1212,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 121
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 37 | 16 | 67 | 15 | 23 |
 | 28 | 3 | 26 | 17 | 35 |
@@ -1222,7 +1222,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 122
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 60 | 4 | 21 | 47 | 29 |
 | 13 | 75 | 45 | 50 | 69 |
@@ -1232,7 +1232,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 123
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 38 | 24 | 69 | 72 | 18 |
 | 71 | 41 | 19 | 42 | 53 |
@@ -1242,7 +1242,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 124
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 30 | 60 | 56 | 12 | 24 |
 | 3 | 58 | 47 | 5 | 74 |
@@ -1252,7 +1252,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 125
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 39 | 10 | 38 | 69 | 20 |
 | 14 | 56 | 19 | 28 | 46 |
@@ -1262,7 +1262,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 126
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 54 | 15 | 16 | 68 | 61 |
 | 2 | 53 | 67 | 52 | 46 |
@@ -1272,7 +1272,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 127
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 48 | 50 | 38 | 67 | 12 |
 | 31 | 65 | 16 | 47 | 21 |
@@ -1282,7 +1282,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 128
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 16 | 73 | 4 | 67 | 27 |
 | 29 | 40 | 37 | 55 | 21 |
@@ -1292,7 +1292,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 129
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 31 | 62 | 33 | 52 | 50 |
 | 13 | 74 | 21 | 40 | 55 |
@@ -1302,7 +1302,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 130
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 68 | 51 | 63 | 32 | 69 |
 | 31 | 58 | 41 | 15 | 66 |
@@ -1312,7 +1312,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 131
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 74 | 35 | 15 | 7 | 61 |
 | 71 | 66 | 75 | 21 | 58 |
@@ -1322,7 +1322,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 132
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 67 | 43 | 63 | 65 | 3 |
 | 14 | 57 | 40 | 55 | 41 |
@@ -1332,7 +1332,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 133
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 41 | 4 | 17 | 36 | 27 |
 | 54 | 67 | 53 | 51 | 42 |
@@ -1342,7 +1342,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 134
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 69 | 59 | 35 | 2 | 23 |
 | 45 | 18 | 71 | 9 | 75 |
@@ -1352,7 +1352,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 135
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 65 | 34 | 46 | 40 | 6 |
 | 25 | 59 | 55 | 64 | 10 |
@@ -1362,7 +1362,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 136
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 20 | 31 | 58 | 22 | 23 |
 | 66 | 62 | 53 | 19 | 43 |
@@ -1372,7 +1372,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 137
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 62 | 25 | 29 | 50 | 18 |
 | 2 | 24 | 16 | 7 | 49 |
@@ -1382,7 +1382,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 138
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 65 | 44 | 18 | 73 | 70 |
 | 55 | 25 | 61 | 43 | 31 |
@@ -1392,7 +1392,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 139
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 26 | 61 | 47 | 52 | 44 |
 | 62 | 2 | 16 | 21 | 75 |
@@ -1402,7 +1402,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 140
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 58 | 9 | 55 | 5 | 57 |
 | 27 | 46 | 48 | 60 | 2 |
@@ -1412,7 +1412,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 141
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 22 | 6 | 26 | 35 | 3 |
 | 33 | 60 | 70 | 1 | 68 |
@@ -1422,7 +1422,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 142
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 37 | 12 | 20 | 31 | 10 |
 | 2 | 35 | 45 | 49 | 33 |
@@ -1432,7 +1432,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 143
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 65 | 54 | 19 | 64 | 51 |
 | 25 | 60 | 56 | 9 | 66 |
@@ -1442,7 +1442,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 144
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 18 | 54 | 31 | 62 | 15 |
 | 36 | 69 | 74 | 2 | 14 |
@@ -1452,7 +1452,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 145
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 27 | 3 | 51 | 53 | 5 |
 | 40 | 64 | 59 | 7 | 33 |
@@ -1462,7 +1462,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 146
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 33 | 13 | 66 | 74 | 55 |
 | 63 | 48 | 72 | 7 | 31 |
@@ -1472,7 +1472,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 147
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 33 | 41 | 68 | 52 | 63 |
 | 62 | 34 | 26 | 74 | 24 |
@@ -1482,7 +1482,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 148
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 40 | 7 | 67 | 8 | 42 |
 | 45 | 58 | 9 | 2 | 44 |
@@ -1492,7 +1492,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 149
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 59 | 65 | 12 | 68 | 24 |
 | 60 | 35 | 20 | 15 | 52 |
@@ -1502,7 +1502,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 150
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 67 | 12 | 49 | 28 | 52 |
 | 39 | 2 | 47 | 60 | 74 |
@@ -1512,7 +1512,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 151
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 1 | 40 | 2 | 61 | 63 |
 | 32 | 5 | 31 | 54 | 43 |
@@ -1522,7 +1522,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 152
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 66 | 8 | 6 | 68 | 9 |
 | 23 | 31 | 25 | 53 | 27 |
@@ -1532,7 +1532,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 153
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 15 | 38 | 30 | 57 | 44 |
 | 3 | 61 | 59 | 55 | 9 |
@@ -1542,7 +1542,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 154
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 25 | 50 | 13 | 4 | 56 |
 | 14 | 45 | 57 | 30 | 65 |
@@ -1552,7 +1552,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 155
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 38 | 17 | 57 | 52 | 9 |
 | 22 | 27 | 68 | 40 | 26 |
@@ -1562,7 +1562,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 156
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 13 | 35 | 32 | 69 | 15 |
 | 51 | 14 | 29 | 19 | 46 |
@@ -1572,7 +1572,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 157
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 46 | 35 | 6 | 60 | 7 |
 | 61 | 58 | 44 | 71 | 59 |
@@ -1582,7 +1582,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 158
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 6 | 49 | 66 | 65 | 62 |
 | 23 | 71 | 41 | 35 | 9 |
@@ -1592,7 +1592,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 159
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 46 | 44 | 52 | 23 | 72 |
 | 61 | 56 | 19 | 67 | 16 |
@@ -1602,7 +1602,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 160
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 42 | 25 | 22 | 17 | 41 |
 | 72 | 49 | 44 | 36 | 75 |
@@ -1612,7 +1612,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 161
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 45 | 50 | 9 | 7 | 43 |
 | 59 | 62 | 75 | 13 | 64 |
@@ -1622,7 +1622,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 162
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 37 | 27 | 49 | 29 | 66 |
 | 26 | 30 | 15 | 41 | 4 |
@@ -1632,7 +1632,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 163
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 6 | 11 | 43 | 57 | 28 |
 | 42 | 5 | 64 | 53 | 55 |
@@ -1642,7 +1642,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 164
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 69 | 74 | 67 | 56 | 54 |
 | 66 | 43 | 65 | 51 | 70 |
@@ -1652,7 +1652,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 165
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 45 | 19 | 55 | 17 | 26 |
 | 70 | 21 | 13 | 3 | 71 |
@@ -1662,7 +1662,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 166
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 10 | 70 | 35 | 17 | 40 |
 | 56 | 63 | 34 | 15 | 12 |
@@ -1672,7 +1672,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 167
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 25 | 15 | 30 | 54 | 47 |
 | 59 | 40 | 4 | 20 | 71 |
@@ -1682,7 +1682,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 168
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 70 | 1 | 48 | 9 | 11 |
 | 41 | 3 | 66 | 2 | 49 |
@@ -1692,7 +1692,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 169
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 42 | 1 | 55 | 15 | 38 |
 | 13 | 72 | 21 | 54 | 18 |
@@ -1702,7 +1702,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 170
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 64 | 29 | 6 | 61 | 43 |
 | 31 | 49 | 50 | 27 | 4 |
@@ -1712,7 +1712,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 171
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 7 | 56 | 14 | 49 | 30 |
 | 70 | 66 | 65 | 28 | 41 |
@@ -1722,7 +1722,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 172
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 25 | 23 | 54 | 62 | 14 |
 | 11 | 40 | 12 | 24 | 8 |
@@ -1732,7 +1732,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 173
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 25 | 66 | 13 | 20 | 27 |
 | 17 | 21 | 74 | 23 | 38 |
@@ -1742,7 +1742,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 174
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 1 | 36 | 47 | 49 | 28 |
 | 57 | 68 | 46 | 75 | 8 |
@@ -1752,7 +1752,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 175
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 1 | 21 | 46 | 14 | 15 |
 | 18 | 53 | 19 | 16 | 3 |
@@ -1762,7 +1762,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 176
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 24 | 44 | 35 | 61 | 29 |
 | 2 | 26 | 25 | 51 | 3 |
@@ -1772,7 +1772,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 177
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 10 | 4 | 35 | 26 | 52 |
 | 32 | 31 | 27 | 22 | 30 |
@@ -1782,7 +1782,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 178
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 19 | 38 | 71 | 28 | 24 |
 | 61 | 25 | 60 | 63 | 18 |
@@ -1792,7 +1792,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 179
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 6 | 28 | 61 | 46 | 3 |
 | 44 | 25 | 74 | 66 | 72 |
@@ -1802,7 +1802,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 180
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 5 | 26 | 22 | 9 | 33 |
 | 70 | 8 | 13 | 69 | 45 |
@@ -1812,7 +1812,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 181
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 37 | 24 | 34 | 35 | 45 |
 | 73 | 68 | 60 | 41 | 21 |
@@ -1822,7 +1822,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 182
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 38 | 40 | 56 | 7 | 20 |
 | 31 | 13 | 32 | 18 | 60 |
@@ -1832,7 +1832,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 183
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 55 | 18 | 39 | 66 | 48 |
 | 19 | 73 | 60 | 75 | 1 |
@@ -1842,7 +1842,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 184
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 45 | 54 | 42 | 4 | 2 |
 | 14 | 53 | 25 | 17 | 65 |
@@ -1852,7 +1852,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 185
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 49 | 63 | 46 | 13 | 74 |
 | 39 | 9 | 51 | 75 | 69 |
@@ -1862,7 +1862,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 186
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 65 | 31 | 32 | 39 | 48 |
 | 27 | 67 | 54 | 37 | 68 |
@@ -1872,7 +1872,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 187
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 60 | 5 | 35 | 67 | 1 |
 | 9 | 42 | 20 | 63 | 47 |
@@ -1882,7 +1882,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 188
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 65 | 44 | 41 | 54 | 46 |
 | 72 | 25 | 30 | 13 | 27 |
@@ -1892,7 +1892,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 189
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 38 | 41 | 11 | 55 | 65 |
 | 34 | 52 | 15 | 33 | 30 |
@@ -1902,7 +1902,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 190
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 45 | 53 | 58 | 1 | 59 |
 | 30 | 40 | 18 | 10 | 25 |
@@ -1912,7 +1912,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 191
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 38 | 74 | 13 | 14 | 70 |
 | 20 | 24 | 67 | 32 | 63 |
@@ -1922,7 +1922,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 192
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 34 | 26 | 38 | 23 | 75 |
 | 8 | 25 | 7 | 69 | 64 |
@@ -1932,7 +1932,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 193
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 27 | 66 | 43 | 28 | 26 |
 | 48 | 34 | 40 | 58 | 61 |
@@ -1942,7 +1942,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 194
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 35 | 72 | 43 | 36 | 17 |
 | 22 | 63 | 33 | 59 | 45 |
@@ -1952,7 +1952,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 195
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 10 | 50 | 54 | 23 | 28 |
 | 63 | 67 | 26 | 44 | 34 |
@@ -1962,7 +1962,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 196
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 5 | 36 | 30 | 72 | 12 |
 | 50 | 41 | 18 | 2 | 71 |
@@ -1972,7 +1972,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 197
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 27 | 28 | 64 | 63 | 25 |
 | 68 | 62 | 56 | 75 | 47 |
@@ -1982,7 +1982,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 198
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 26 | 44 | 9 | 36 | 40 |
 | 4 | 72 | 21 | 39 | 57 |
@@ -1992,7 +1992,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 199
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 67 | 71 | 14 | 43 | 73 |
 | 65 | 28 | 30 | 54 | 21 |
@@ -2002,7 +2002,7 @@ Regenerate all synced files by running `scripts/generate_offline_cartella_catalo
 
 ## Cartella 200
 
-| 1 | 2 | 3 | 4 | 5 |
+| B | I | N | G | O |
 |---|---|---|---|---|
 | 26 | 58 | 38 | 8 | 36 |
 | 70 | 14 | 17 | 44 | 28 |
