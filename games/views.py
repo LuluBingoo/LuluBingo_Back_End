@@ -753,7 +753,7 @@ class ShopBingoSessionCreateView(APIView):
 
         session = ShopBingoSession.objects.create(
             shop=request.user,
-            play_mode=serializer.validated_data.get("play_mode", ShopBingoSession.PlayMode.ONLINE),
+            play_mode=serializer.validated_data.get("play_mode", ShopBingoSession.PlayMode.OFFLINE),
             fixed_players=serializer.validated_data.get("fixed_players", 4),
             min_bet_per_cartella=serializer.validated_data["min_bet_per_cartella"],
         )

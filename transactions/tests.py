@@ -13,6 +13,7 @@ class TransactionTests(APITestCase):
             password="pass1234",
             name="Wallet User",
             contact_email="wallet@example.com",
+            contact_phone="0911223344",
         )
         self.user.status = ShopUser.Status.ACTIVE
         self.user.must_change_password = False
@@ -29,6 +30,8 @@ class TransactionTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.user.refresh_from_db()
         self.assertEqual(float(self.user.wallet_balance), 25.00)
+        latest_tx = Transaction.objects.filter(user=self.user).latest("created_at")
+        self.assertEqual(latest_tx.operation_source, Transaction.OperationSource.API)
         history = self.client.get(reverse("tx-history"), **headers)
         self.assertEqual(history.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(history.data), 1)

@@ -4,6 +4,7 @@ from rest_framework.test import APITestCase
 
 from accounts.models import ShopUser
 from .models import Game, ShopBingoSession
+from .offline_cartellas import get_offline_cartella_board
 from transactions.models import Transaction
 
 
@@ -332,11 +333,26 @@ class GameTests(APITestCase):
         )
         self.assertEqual(reserve_2.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_shop_mode_creates_game_on_fourth_paid_player(self):
+    def test_shop_mode_session_defaults_to_offline(self):
         headers = self.auth_headers()
         session_resp = self.client.post(
             reverse("shop-mode-session-create"),
             {"min_bet_per_cartella": "20.00"},
+            format="json",
+            **headers,
+        )
+
+        self.assertEqual(session_resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(session_resp.data["play_mode"], ShopBingoSession.PlayMode.OFFLINE)
+
+        session = ShopBingoSession.objects.get(session_id=session_resp.data["session_id"])
+        self.assertEqual(session.play_mode, ShopBingoSession.PlayMode.OFFLINE)
+
+    def test_shop_mode_creates_online_game_when_requested(self):
+        headers = self.auth_headers()
+        session_resp = self.client.post(
+            reverse("shop-mode-session-create"),
+            {"min_bet_per_cartella": "20.00", "play_mode": ShopBingoSession.PlayMode.ONLINE},
             format="json",
             **headers,
         )
@@ -379,16 +395,62 @@ class GameTests(APITestCase):
         game = Game.objects.get(game_code=created_game_code)
         self.assertEqual(game.game_mode, Game.Mode.SHOP_ONLINE)
         self.assertEqual(game.num_players, 4)
+        self.assertEqual(session_resp.data["play_mode"], ShopBingoSession.PlayMode.ONLINE)
 
         session = ShopBingoSession.objects.get(session_id=session_id)
         self.assertEqual(session.status, ShopBingoSession.Status.LOCKED)
         self.assertIsNotNone(session.game)
 
-    def test_shop_mode_generated_boards_are_unique(self):
+    def test_shop_mode_creates_offline_game_by_default(self):
         headers = self.auth_headers()
         session_resp = self.client.post(
             reverse("shop-mode-session-create"),
             {"min_bet_per_cartella": "20.00"},
+            format="json",
+            **headers,
+        )
+        self.assertEqual(session_resp.status_code, status.HTTP_201_CREATED)
+        session_id = session_resp.data["session_id"]
+
+        players = [
+            ("P1", [1, 2, 3, 4]),
+            ("P2", [5, 6, 7, 8]),
+            ("P3", [9, 10, 11, 12]),
+            ("P4", [13, 14, 15, 16]),
+        ]
+
+        for player_name, cartellas in players:
+            reserve_resp = self.client.post(
+                reverse("shop-mode-session-reserve", args=[session_id]),
+                {
+                    "player_name": player_name,
+                    "cartella_numbers": cartellas,
+                    "bet_per_cartella": "20.00",
+                },
+                format="json",
+                **headers,
+            )
+            self.assertEqual(reserve_resp.status_code, status.HTTP_200_OK)
+
+        create_resp = self.client.post(
+            reverse("shop-mode-session-create-game", args=[session_id]),
+            {},
+            format="json",
+            **headers,
+        )
+        self.assertEqual(create_resp.status_code, status.HTTP_200_OK)
+
+        game_data = create_resp.data["game"]
+        self.assertEqual(game_data["game_mode"], Game.Mode.SHOP_OFFLINE)
+        self.assertEqual(game_data["assigned_cartella_numbers"], list(range(1, 17)))
+        self.assertEqual(game_data["cartella_numbers"][0], get_offline_cartella_board(1))
+        self.assertEqual(game_data["cartella_numbers"][15], get_offline_cartella_board(16))
+
+    def test_shop_mode_generated_boards_are_unique(self):
+        headers = self.auth_headers()
+        session_resp = self.client.post(
+            reverse("shop-mode-session-create"),
+            {"min_bet_per_cartella": "20.00", "play_mode": ShopBingoSession.PlayMode.ONLINE},
             format="json",
             **headers,
         )

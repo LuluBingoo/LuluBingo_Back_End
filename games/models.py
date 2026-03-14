@@ -109,7 +109,7 @@ class ShopBingoSession(models.Model):
     shop = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="shop_bingo_sessions", on_delete=models.CASCADE)
     session_id = models.CharField(max_length=24, unique=True, editable=False)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.WAITING)
-    play_mode = models.CharField(max_length=20, choices=PlayMode.choices, default=PlayMode.ONLINE)
+    play_mode = models.CharField(max_length=20, choices=PlayMode.choices, default=PlayMode.OFFLINE)
     fixed_players = models.PositiveSmallIntegerField(default=4)
     min_bet_per_cartella = models.DecimalField(max_digits=12, decimal_places=2, default=20)
     players_data = models.JSONField(default=list, blank=True)

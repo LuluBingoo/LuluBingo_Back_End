@@ -23,6 +23,7 @@ def apply_transaction(
     reference: str = "",
     metadata: Optional[dict] = None,
     actor_role: Optional[str] = None,
+    operation_source: Optional[str] = None,
     currency: str = Transaction.Currency.ETB,
 ) -> Transaction:
     metadata = metadata or {}
@@ -49,6 +50,14 @@ def apply_transaction(
                 Transaction.ActorRole.ADMIN if locked_user.is_staff else Transaction.ActorRole.SHOP
             )
 
+        resolved_operation_source = operation_source
+        if resolved_operation_source is None:
+            resolved_operation_source = (
+                Transaction.OperationSource.ADMIN
+                if resolved_actor_role == Transaction.ActorRole.ADMIN
+                else Transaction.OperationSource.API
+            )
+
         tx = Transaction.objects.create(
             user=locked_user,
             tx_type=tx_type,
@@ -58,6 +67,7 @@ def apply_transaction(
             reference=reference,
             metadata=metadata,
             actor_role=resolved_actor_role,
+            operation_source=resolved_operation_source,
             currency=currency,
         )
     return tx

@@ -19,6 +19,11 @@ class Transaction(models.Model):
     class Currency(models.TextChoices):
         ETB = "ETB", "ETB"
 
+    class OperationSource(models.TextChoices):
+        API = "api", "API"
+        ADMIN = "admin", "Admin"
+        SYSTEM = "system", "System"
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="transactions", on_delete=models.CASCADE)
     tx_type = models.CharField(max_length=30, choices=Type.choices)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -27,6 +32,7 @@ class Transaction(models.Model):
     reference = models.CharField(max_length=120, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
     actor_role = models.CharField(max_length=20, choices=ActorRole.choices, default=ActorRole.SHOP)
+    operation_source = models.CharField(max_length=30, choices=OperationSource.choices, default=OperationSource.SYSTEM)
     currency = models.CharField(max_length=10, choices=Currency.choices, default=Currency.ETB)
     created_at = models.DateTimeField(default=timezone.now)
 
