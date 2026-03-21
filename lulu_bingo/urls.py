@@ -18,6 +18,10 @@ from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+admin.site.site_header = "LuluBingo Admin"
+admin.site.site_title = "LuluBingo"
+admin.site.index_title = "Welcome to LuluBingo Portal"
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
