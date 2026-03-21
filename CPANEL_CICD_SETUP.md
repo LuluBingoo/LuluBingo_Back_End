@@ -73,7 +73,10 @@ Notes:
 
 - Trigger: push to `master`
 - Upload target: `./lulubingo_backend/` (under FTP root, usually `public_html`)
+- Protocol: `ftp` on port `21` (set in workflow for better compatibility on some cPanel shared hosts)
 - Auto restart signal: workflow updates `tmp/restart.txt`
+
+If your provider requires FTPS, switch workflow `protocol` from `ftp` to `ftps`.
 
 ## 6.1 Admin CSS/JS (Important)
 
@@ -98,3 +101,4 @@ This project is configured with WhiteNoise, so static files (including admin CSS
 - Login denied: verify `CPANEL_USERNAME` and `CPANEL_PASSWORD`.
 - 500 error: check cPanel error logs and validate server `.env`.
 - Missing packages: rerun `pip install -r requirements.txt` in app root.
+- If you see `Server sent FIN packet unexpectedly`, keep the current workflow setup (direct FTP sync + excludes). If your host explicitly requires FTPS, change protocol to `ftps` and retry.
