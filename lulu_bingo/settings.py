@@ -1,10 +1,12 @@
-import os
-from pathlib import Path
-from dotenv import load_dotenv
-from urllib.parse import urlparse, parse_qsl
 
-# --------------------------------------------------
-# Base
+# --- PyMySQL auto-enable for MySQL ---
+import sys
+if 'mysql' in (get_env("DATABASE_URL") or '').lower():
+    try:
+        import pymysql
+        pymysql.install_as_MySQLdb()
+    except ImportError:
+        print("PyMySQL not installed, but required for MySQL connections.", file=sys.stderr)
 # --------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent.parent
