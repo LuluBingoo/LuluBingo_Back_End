@@ -1,6 +1,8 @@
 
+
 # --- PyMySQL auto-enable for MySQL ---
 import sys
+# Place after get_env is defined
 if 'mysql' in (get_env("DATABASE_URL") or '').lower():
     try:
         import pymysql
