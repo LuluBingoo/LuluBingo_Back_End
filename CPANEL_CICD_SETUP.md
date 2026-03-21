@@ -102,3 +102,38 @@ This project is configured with WhiteNoise, so static files (including admin CSS
 - 500 error: check cPanel error logs and validate server `.env`.
 - Missing packages: rerun `pip install -r requirements.txt` in app root.
 - If you see `Server sent FIN packet unexpectedly`, keep the current workflow setup (direct FTP sync + excludes). If your host explicitly requires FTPS, change protocol to `ftps` and retry.
+
+## 9. Fix `RecursionError` in `passenger_wsgi.py`
+
+If stderr shows repeated lines like `wsgi = load_source('wsgi', 'passenger_wsgi.py')`, the server is using an old recursive startup file.
+
+Run this in cPanel Terminal:
+
+```bash
+cd ~/apiludisbingo
+cat > passenger_wsgi.py << 'PYEOF'
+import os
+import sys
+
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+if PROJECT_ROOT not in sys.path:
+   sys.path.insert(0, PROJECT_ROOT)
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "lulu_bingo.settings")
+
+from lulu_bingo.wsgi import application
+PYEOF
+```
+
+Then restart app and verify:
+
+```bash
+touch tmp/restart.txt
+python -c "import passenger_wsgi; print('passenger_wsgi ok')"
+```
+
+Expected output:
+
+```text
+passenger_wsgi ok
+```

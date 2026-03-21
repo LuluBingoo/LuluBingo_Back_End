@@ -1,6 +1,7 @@
 import os
 import sys
 
+# Passenger entrypoint for cPanel Python App.
 # Keep project root importable
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 if PROJECT_ROOT not in sys.path:
