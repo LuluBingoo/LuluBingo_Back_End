@@ -4,6 +4,15 @@ from django.contrib.auth.admin import UserAdmin
 from .models import LoginAttempt, ShopUser
 
 
+# Site branding
+from django.contrib import admin as dj_admin
+
+dj_admin.site.site_header = "LuluBingo Admin"
+dj_admin.site.site_title = "LuluBingo"
+dj_admin.site.index_title = "Dashboard"
+dj_admin.site.site_url = "/"
+
+
 @admin.register(ShopUser)
 class ShopUserAdmin(UserAdmin):
     model = ShopUser

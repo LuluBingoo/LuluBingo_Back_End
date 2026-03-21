@@ -1,0 +1,20 @@
+{% extends "admin/base.html" %} {% load static %} {% block title %}LuluBingo —
+Administration{% endblock %} {% block branding %}
+<h1 id="site-name">
+  <a href="{% url 'admin:index' %}">
+    <img
+      id="site-logo"
+      src="{% static 'admin/images/lulubingo-logo.svg' %}"
+      alt="LuluBingo"
+    />
+    LuluBingo
+  </a>
+</h1>
+{% endblock %} {% block nav-global %} {{ block.super }} {% endblock %} {% block
+extrahead %}
+<link
+  rel="stylesheet"
+  type="text/css"
+  href="{% static 'admin/css/custom_admin.css' %}"
+/>
+{{ block.super }} {% endblock %}

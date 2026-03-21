@@ -1,0 +1,75 @@
+/* LuluBingo admin custom styles */
+:root {
+  --brand: #0b6efd;
+  --accent: #ffb703;
+  --muted: #6b7280;
+  --bg: #0f172a;
+}
+
+/* Header */
+#header {
+  background: linear-gradient(90deg, var(--brand), #0069d9);
+  border-bottom: 0;
+}
+#header .module a,
+#header .module strong {
+  color: #fff !important;
+}
+
+#site-name a {
+  color: #fff !important;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+#site-logo {
+  height: 36px;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+/* Sidebar */
+#nav-sidebar {
+  background: #071032;
+}
+#nav-sidebar a {
+  color: #cbd5e1 !important;
+}
+#nav-sidebar a:hover {
+  color: var(--accent) !important;
+}
+
+/* Content */
+#content-main {
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(2, 6, 23, 0.08);
+  padding: 24px;
+  border-radius: 8px;
+}
+
+/* Buttons */
+.button,
+.default {
+  background: linear-gradient(180deg, var(--brand), #0256c1) !important;
+  border-radius: 6px !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+/* Forms */
+.form-row label {
+  color: #111827;
+  font-weight: 600;
+}
+
+/* Replace Django footer */
+#footer {
+  color: var(--muted);
+}
+
+/* Misc tweaks */
+.object-tools li a {
+  background: transparent !important;
+  color: var(--brand) !important;
+}
