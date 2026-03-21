@@ -31,7 +31,7 @@ Create these **exact** names:
 1. In cPanel, open **Setup Python App**.
 2. Create app with:
    - Python version: `3.11` (or closest available)
-   - Application root: your API subdomain root folder (for example `apiludisbingo`)
+   - Application root: your API subdomain root folder (for example `api.lulubingo.com`)
    - Application URL: your backend URL/subdomain
    - Application startup file: `passenger_wsgi.py`
    - Application Entry point: `application`
@@ -42,7 +42,7 @@ Create these **exact** names:
 Run in cPanel Terminal (or SSH if available):
 
 ```bash
-cd ~/apiludisbingo
+cd ~/api.lulubingo.com
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py collectstatic --noinput
@@ -52,7 +52,7 @@ python manage.py collectstatic --noinput
 
 Create and keep this file on server only:
 
-`/home/<CPANEL_USERNAME>/apiludisbingo/.env`
+`/home/<CPANEL_USERNAME>/api.lulubingo.com/.env`
 
 Minimum fields to set:
 
@@ -83,7 +83,7 @@ If your provider requires FTPS, switch workflow `protocol` from `ftp` to `ftps`.
 If Django admin appears without styles/scripts, run:
 
 ```bash
-cd ~/apiludisbingo
+cd ~/api.lulubingo.com
 python manage.py collectstatic --noinput
 ```
 
@@ -110,7 +110,7 @@ If stderr shows repeated lines like `wsgi = load_source('wsgi', 'passenger_wsgi.
 Run this in cPanel Terminal:
 
 ```bash
-cd ~/apiludisbingo
+cd ~/api.lulubingo.com
 cat > passenger_wsgi.py << 'PYEOF'
 import os
 import sys

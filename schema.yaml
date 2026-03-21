@@ -1,8 +1,9 @@
 openapi: 3.0.3
 info:
-  title: Dallol Bingo API
+  title: Lulu Bingo API
   version: 0.1.0
-  description: Authentication & shop identity endpoints for Dallol Bingo. Shops are
+  description:
+    Authentication & shop identity endpoints for Lulu Bingo. Shops are
     provisioned by HQ admins only; no self-signup is allowed. Each shop receives temporary
     credentials, must change the password on first login, and can be activated, suspended,
     or blocked centrally. Tokens issued here secure all subsequent Bingo operations.
@@ -11,804 +12,806 @@ paths:
     post:
       operationId: api_auth_2fa_disable_create
       tags:
-      - Authentication
+        - Authentication
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TwoFactorDisable'
+              $ref: "#/components/schemas/TwoFactorDisable"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TwoFactorDisable'
+              $ref: "#/components/schemas/TwoFactorDisable"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TwoFactorDisable'
+              $ref: "#/components/schemas/TwoFactorDisable"
         required: true
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ShopUser'
-          description: ''
+                $ref: "#/components/schemas/ShopUser"
+          description: ""
   /api/auth/2fa/email-code:
     post:
       operationId: api_auth_2fa_email_code_create
       tags:
-      - Authentication
+        - Authentication
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TwoFactorEmailCode'
+              $ref: "#/components/schemas/TwoFactorEmailCode"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TwoFactorEmailCode'
+              $ref: "#/components/schemas/TwoFactorEmailCode"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TwoFactorEmailCode'
+              $ref: "#/components/schemas/TwoFactorEmailCode"
         required: true
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           description: Email code sent
   /api/auth/2fa/enable:
     post:
       operationId: api_auth_2fa_enable_create
       tags:
-      - Authentication
+        - Authentication
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TwoFactorEnable'
+              $ref: "#/components/schemas/TwoFactorEnable"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TwoFactorEnable'
+              $ref: "#/components/schemas/TwoFactorEnable"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TwoFactorEnable'
+              $ref: "#/components/schemas/TwoFactorEnable"
         required: true
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ShopUser'
-          description: ''
+                $ref: "#/components/schemas/ShopUser"
+          description: ""
   /api/auth/2fa/setup:
     get:
       operationId: api_auth_2fa_setup_retrieve
       tags:
-      - Authentication
+        - Authentication
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TwoFactorSetup'
-          description: ''
+                $ref: "#/components/schemas/TwoFactorSetup"
+          description: ""
   /api/auth/login:
     post:
       operationId: api_auth_login_create
       tags:
-      - Authentication
+        - Authentication
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Login'
+              $ref: "#/components/schemas/Login"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Login'
+              $ref: "#/components/schemas/Login"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Login'
+              $ref: "#/components/schemas/Login"
         required: true
       security:
-      - tokenAuth: []
-      - {}
+        - tokenAuth: []
+        - {}
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthTokenResponse'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/AuthTokenResponse"
+          description: ""
+        "400":
           description: Validation error / invalid credentials
   /api/auth/logout:
     post:
       operationId: api_auth_logout_create
       tags:
-      - Authentication
+        - Authentication
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           description: Token invalidated
   /api/auth/me:
     get:
       operationId: api_auth_me_retrieve
       tags:
-      - Authentication
+        - Authentication
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MeResponse'
-          description: ''
-        '401':
+                $ref: "#/components/schemas/MeResponse"
+          description: ""
+        "401":
           description: Authentication required
   /api/auth/password/change:
     post:
       operationId: api_auth_password_change_create
       tags:
-      - Authentication
+        - Authentication
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChangePassword'
+              $ref: "#/components/schemas/ChangePassword"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ChangePassword'
+              $ref: "#/components/schemas/ChangePassword"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ChangePassword'
+              $ref: "#/components/schemas/ChangePassword"
         required: true
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthTokenResponse'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/AuthTokenResponse"
+          description: ""
+        "400":
           description: Validation error
-        '401':
+        "401":
           description: Authentication required
   /api/auth/password/forgot:
     post:
       operationId: api_auth_password_forgot_create
       tags:
-      - Authentication
+        - Authentication
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PasswordResetRequest'
+              $ref: "#/components/schemas/PasswordResetRequest"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PasswordResetRequest'
+              $ref: "#/components/schemas/PasswordResetRequest"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PasswordResetRequest'
+              $ref: "#/components/schemas/PasswordResetRequest"
       security:
-      - tokenAuth: []
-      - {}
+        - tokenAuth: []
+        - {}
       responses:
-        '200':
+        "200":
           description: Reset email sent
   /api/auth/password/reset:
     post:
       operationId: api_auth_password_reset_create
       tags:
-      - Authentication
+        - Authentication
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PasswordResetConfirm'
+              $ref: "#/components/schemas/PasswordResetConfirm"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PasswordResetConfirm'
+              $ref: "#/components/schemas/PasswordResetConfirm"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PasswordResetConfirm'
+              $ref: "#/components/schemas/PasswordResetConfirm"
         required: true
       security:
-      - tokenAuth: []
-      - {}
+        - tokenAuth: []
+        - {}
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthTokenResponse'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/AuthTokenResponse"
+          description: ""
+        "400":
           description: Invalid token or data
   /api/games/game/{game_id}/cartella/{cartella_number}:
     get:
       operationId: api_games_game_cartella_retrieve
-      description: Legacy compatibility endpoint for looking up a single cartella
+      description:
+        Legacy compatibility endpoint for looking up a single cartella
         by game ID and cartella number.
       summary: Public single-cartella lookup
       parameters:
-      - in: path
-        name: cartella_number
-        schema:
-          type: integer
-        required: true
-      - in: path
-        name: game_id
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: cartella_number
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: game_id
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       security:
-      - tokenAuth: []
-      - {}
+        - tokenAuth: []
+        - {}
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublicCartellaResponse'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/PublicCartellaResponse"
+          description: ""
+        "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '404':
+                $ref: "#/components/schemas/DetailResponse"
+          description: ""
+        "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '429':
+                $ref: "#/components/schemas/DetailResponse"
+          description: ""
+        "429":
           description: Rate limited
   /api/games/game/cartellas/check:
     post:
       operationId: api_games_game_cartellas_check_create
-      description: Lookup up to 4 cartella boards for a public game by sending a game
+      description:
+        Lookup up to 4 cartella boards for a public game by sending a game
         ID and an array of cartella numbers.
       summary: Public cartella lookup
       tags:
-      - Games
+        - Games
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PublicCartellaLookup'
+              $ref: "#/components/schemas/PublicCartellaLookup"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PublicCartellaLookup'
+              $ref: "#/components/schemas/PublicCartellaLookup"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PublicCartellaLookup'
+              $ref: "#/components/schemas/PublicCartellaLookup"
         required: true
       security:
-      - tokenAuth: []
-      - {}
+        - tokenAuth: []
+        - {}
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublicCartellaResponse'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/PublicCartellaResponse"
+          description: ""
+        "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '404':
+                $ref: "#/components/schemas/DetailResponse"
+          description: ""
+        "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '429':
+                $ref: "#/components/schemas/DetailResponse"
+          description: ""
+        "429":
           description: Rate limited
   /api/games/games:
     get:
       operationId: api_games_games_list
       tags:
-      - Games
+        - Games
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Game'
-          description: ''
+                  $ref: "#/components/schemas/Game"
+          description: ""
     post:
       operationId: api_games_games_create
       tags:
-      - Games
+        - Games
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GameCreate'
+              $ref: "#/components/schemas/GameCreate"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/GameCreate'
+              $ref: "#/components/schemas/GameCreate"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/GameCreate'
+              $ref: "#/components/schemas/GameCreate"
         required: true
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '201':
+        "201":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Game'
-          description: ''
+                $ref: "#/components/schemas/Game"
+          description: ""
   /api/games/games/{code}:
     get:
       operationId: api_games_games_retrieve
       parameters:
-      - in: path
-        name: code
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: code
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Game'
-          description: ''
-        '404':
+                $ref: "#/components/schemas/Game"
+          description: ""
+        "404":
           description: Not found
   /api/games/games/{code}/cartellas/{cartella_number}/draw:
     get:
       operationId: api_games_games_cartellas_draw_retrieve
       summary: Public cartella draw
       parameters:
-      - in: path
-        name: cartella_number
-        schema:
-          type: integer
-        required: true
-      - in: path
-        name: code
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: cartella_number
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: code
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       security:
-      - tokenAuth: []
-      - {}
+        - tokenAuth: []
+        - {}
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameCartellaDrawResponse'
-          description: ''
-        '404':
+                $ref: "#/components/schemas/GameCartellaDrawResponse"
+          description: ""
+        "404":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
+                $ref: "#/components/schemas/DetailResponse"
+          description: ""
   /api/games/games/{code}/claim:
     post:
       operationId: api_games_games_claim_create
       parameters:
-      - in: path
-        name: code
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: code
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GameClaim'
+              $ref: "#/components/schemas/GameClaim"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/GameClaim'
+              $ref: "#/components/schemas/GameClaim"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/GameClaim'
+              $ref: "#/components/schemas/GameClaim"
         required: true
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameClaimResponse'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/GameClaimResponse"
+          description: ""
+        "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '404':
+                $ref: "#/components/schemas/DetailResponse"
+          description: ""
+        "404":
           description: Game not found
   /api/games/games/{code}/complete:
     post:
       operationId: api_games_games_complete_create
       parameters:
-      - in: path
-        name: code
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: code
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GameComplete'
+              $ref: "#/components/schemas/GameComplete"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/GameComplete'
+              $ref: "#/components/schemas/GameComplete"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/GameComplete'
+              $ref: "#/components/schemas/GameComplete"
         required: true
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Game'
-          description: ''
+                $ref: "#/components/schemas/Game"
+          description: ""
   /api/games/games/{code}/draw:
     get:
       operationId: api_games_games_draw_retrieve
       parameters:
-      - in: path
-        name: code
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: code
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Game'
-          description: ''
+                $ref: "#/components/schemas/Game"
+          description: ""
   /api/games/games/{code}/next-call:
     post:
       operationId: api_games_games_next_call_create
       parameters:
-      - in: path
-        name: code
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: code
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameNextCallResponse'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/GameNextCallResponse"
+          description: ""
+        "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '404':
+                $ref: "#/components/schemas/DetailResponse"
+          description: ""
+        "404":
           description: Game not found
   /api/games/games/{code}/shuffle:
     post:
       operationId: api_games_games_shuffle_create
       parameters:
-      - in: path
-        name: code
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: code
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameShuffleResponse'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/GameShuffleResponse"
+          description: ""
+        "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '404':
+                $ref: "#/components/schemas/DetailResponse"
+          description: ""
+        "404":
           description: Game not found
   /api/games/games/{code}/start:
     post:
       operationId: api_games_games_start_create
       parameters:
-      - in: path
-        name: code
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: code
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameStartResponse'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/GameStartResponse"
+          description: ""
+        "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '404':
+                $ref: "#/components/schemas/DetailResponse"
+          description: ""
+        "404":
           description: Game not found
   /api/games/games/{code}/state:
     get:
       operationId: api_games_games_state_retrieve
       parameters:
-      - in: path
-        name: code
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: code
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameStateResponse'
-          description: ''
-        '404':
+                $ref: "#/components/schemas/GameStateResponse"
+          description: ""
+        "404":
           description: Game not found
   /api/games/games/reports:
     get:
       operationId: api_games_games_reports_retrieve
       parameters:
-      - in: query
-        name: days
-        schema:
-          type: integer
-        description: Relative date window in days
-      - in: query
-        name: end_date
-        schema:
-          type: string
-        description: End date (YYYY-MM-DD)
-      - in: query
-        name: search
-        schema:
-          type: string
-        description: Search game ID, winner labels, transaction reference
-      - in: query
-        name: start_date
-        schema:
-          type: string
-        description: Start date (YYYY-MM-DD)
-      - in: query
-        name: status
-        schema:
-          type: string
-        description: Filter game status
-      - in: query
-        name: tx_type
-        schema:
-          type: string
-        description: Filter transaction type
+        - in: query
+          name: days
+          schema:
+            type: integer
+          description: Relative date window in days
+        - in: query
+          name: end_date
+          schema:
+            type: string
+          description: End date (YYYY-MM-DD)
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search game ID, winner labels, transaction reference
+        - in: query
+          name: start_date
+          schema:
+            type: string
+          description: Start date (YYYY-MM-DD)
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter game status
+        - in: query
+          name: tx_type
+          schema:
+            type: string
+          description: Filter transaction type
       tags:
-      - Games
+        - Games
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameAuditReportResponse'
-          description: ''
+                $ref: "#/components/schemas/GameAuditReportResponse"
+          description: ""
   /api/games/games/shop-mode/sessions:
     post:
       operationId: api_games_games_shop_mode_sessions_create
       tags:
-      - Games
+        - Games
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ShopBingoSessionCreate'
+              $ref: "#/components/schemas/ShopBingoSessionCreate"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ShopBingoSessionCreate'
+              $ref: "#/components/schemas/ShopBingoSessionCreate"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ShopBingoSessionCreate'
+              $ref: "#/components/schemas/ShopBingoSessionCreate"
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '201':
+        "201":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ShopBingoSession'
-          description: ''
+                $ref: "#/components/schemas/ShopBingoSession"
+          description: ""
   /api/games/games/shop-mode/sessions/{session_id}:
     get:
       operationId: api_games_games_shop_mode_sessions_retrieve
       parameters:
-      - in: path
-        name: session_id
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: session_id
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ShopBingoSession'
-          description: ''
+                $ref: "#/components/schemas/ShopBingoSession"
+          description: ""
   /api/games/games/shop-mode/sessions/{session_id}/confirm-payment:
     post:
       operationId: api_games_games_shop_mode_sessions_confirm_payment_create
       parameters:
-      - in: path
-        name: session_id
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: session_id
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ShopBingoConfirmPayment'
+              $ref: "#/components/schemas/ShopBingoConfirmPayment"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ShopBingoConfirmPayment'
+              $ref: "#/components/schemas/ShopBingoConfirmPayment"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ShopBingoConfirmPayment'
+              $ref: "#/components/schemas/ShopBingoConfirmPayment"
         required: true
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ShopBingoSessionGameResponse'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/ShopBingoSessionGameResponse"
+          description: ""
+        "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '404':
+                $ref: "#/components/schemas/DetailResponse"
+          description: ""
+        "404":
           description: Session or player not found
   /api/games/games/shop-mode/sessions/{session_id}/create-game:
     post:
       operationId: api_games_games_shop_mode_sessions_create_game_create
       parameters:
-      - in: path
-        name: session_id
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: session_id
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ShopBingoSessionGameResponse'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/ShopBingoSessionGameResponse"
+          description: ""
+        "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '404':
+                $ref: "#/components/schemas/DetailResponse"
+          description: ""
+        "404":
           description: Session not found
   /api/games/games/shop-mode/sessions/{session_id}/reserve:
     post:
       operationId: api_games_games_shop_mode_sessions_reserve_create
       parameters:
-      - in: path
-        name: session_id
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: session_id
+          schema:
+            type: string
+          required: true
       tags:
-      - Games
+        - Games
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ShopBingoCartellaSelect'
+              $ref: "#/components/schemas/ShopBingoCartellaSelect"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ShopBingoCartellaSelect'
+              $ref: "#/components/schemas/ShopBingoCartellaSelect"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ShopBingoCartellaSelect'
+              $ref: "#/components/schemas/ShopBingoCartellaSelect"
         required: true
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ShopBingoSession'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/ShopBingoSession"
+          description: ""
+        "400":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '404':
+                $ref: "#/components/schemas/DetailResponse"
+          description: ""
+        "404":
           description: Session not found
   /api/schema/:
     get:
@@ -819,124 +822,124 @@ paths:
         - YAML: application/vnd.oai.openapi
         - JSON: application/vnd.oai.openapi+json
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - json
-          - yaml
-      - in: query
-        name: lang
-        schema:
-          type: string
-          enum:
-          - af
-          - ar
-          - ar-dz
-          - ast
-          - az
-          - be
-          - bg
-          - bn
-          - br
-          - bs
-          - ca
-          - ckb
-          - cs
-          - cy
-          - da
-          - de
-          - dsb
-          - el
-          - en
-          - en-au
-          - en-gb
-          - eo
-          - es
-          - es-ar
-          - es-co
-          - es-mx
-          - es-ni
-          - es-ve
-          - et
-          - eu
-          - fa
-          - fi
-          - fr
-          - fy
-          - ga
-          - gd
-          - gl
-          - he
-          - hi
-          - hr
-          - hsb
-          - hu
-          - hy
-          - ia
-          - id
-          - ig
-          - io
-          - is
-          - it
-          - ja
-          - ka
-          - kab
-          - kk
-          - km
-          - kn
-          - ko
-          - ky
-          - lb
-          - lt
-          - lv
-          - mk
-          - ml
-          - mn
-          - mr
-          - ms
-          - my
-          - nb
-          - ne
-          - nl
-          - nn
-          - os
-          - pa
-          - pl
-          - pt
-          - pt-br
-          - ro
-          - ru
-          - sk
-          - sl
-          - sq
-          - sr
-          - sr-latn
-          - sv
-          - sw
-          - ta
-          - te
-          - tg
-          - th
-          - tk
-          - tr
-          - tt
-          - udm
-          - ug
-          - uk
-          - ur
-          - uz
-          - vi
-          - zh-hans
-          - zh-hant
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - json
+              - yaml
+        - in: query
+          name: lang
+          schema:
+            type: string
+            enum:
+              - af
+              - ar
+              - ar-dz
+              - ast
+              - az
+              - be
+              - bg
+              - bn
+              - br
+              - bs
+              - ca
+              - ckb
+              - cs
+              - cy
+              - da
+              - de
+              - dsb
+              - el
+              - en
+              - en-au
+              - en-gb
+              - eo
+              - es
+              - es-ar
+              - es-co
+              - es-mx
+              - es-ni
+              - es-ve
+              - et
+              - eu
+              - fa
+              - fi
+              - fr
+              - fy
+              - ga
+              - gd
+              - gl
+              - he
+              - hi
+              - hr
+              - hsb
+              - hu
+              - hy
+              - ia
+              - id
+              - ig
+              - io
+              - is
+              - it
+              - ja
+              - ka
+              - kab
+              - kk
+              - km
+              - kn
+              - ko
+              - ky
+              - lb
+              - lt
+              - lv
+              - mk
+              - ml
+              - mn
+              - mr
+              - ms
+              - my
+              - nb
+              - ne
+              - nl
+              - nn
+              - os
+              - pa
+              - pl
+              - pt
+              - pt-br
+              - ro
+              - ru
+              - sk
+              - sl
+              - sq
+              - sr
+              - sr-latn
+              - sv
+              - sw
+              - ta
+              - te
+              - tg
+              - th
+              - tk
+              - tr
+              - tt
+              - udm
+              - ug
+              - uk
+              - ur
+              - uz
+              - vi
+              - zh-hans
+              - zh-hant
       tags:
-      - api
+        - api
       security:
-      - tokenAuth: []
-      - {}
+        - tokenAuth: []
+        - {}
       responses:
-        '200':
+        "200":
           content:
             application/vnd.oai.openapi:
               schema:
@@ -954,121 +957,121 @@ paths:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
+          description: ""
   /api/shop/profile:
     get:
       operationId: api_shop_profile_retrieve
       tags:
-      - Shop
+        - Shop
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ShopProfile'
-          description: ''
-        '401':
+                $ref: "#/components/schemas/ShopProfile"
+          description: ""
+        "401":
           description: Authentication required
     put:
       operationId: api_shop_profile_update
       tags:
-      - Shop
+        - Shop
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ShopProfile'
+              $ref: "#/components/schemas/ShopProfile"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ShopProfile'
+              $ref: "#/components/schemas/ShopProfile"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ShopProfile'
+              $ref: "#/components/schemas/ShopProfile"
         required: true
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ShopProfile'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/ShopProfile"
+          description: ""
+        "400":
           description: Validation error
-        '401':
+        "401":
           description: Authentication required
   /api/transactions/transactions/deposit:
     post:
       operationId: api_transactions_transactions_deposit_create
       tags:
-      - Transactions
+        - Transactions
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Amount'
+              $ref: "#/components/schemas/Amount"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Amount'
+              $ref: "#/components/schemas/Amount"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Amount'
+              $ref: "#/components/schemas/Amount"
         required: true
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '201':
+        "201":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
-          description: ''
+                $ref: "#/components/schemas/Transaction"
+          description: ""
   /api/transactions/transactions/history:
     get:
       operationId: api_transactions_transactions_history_list
       tags:
-      - Transactions
+        - Transactions
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Transaction'
-          description: ''
+                  $ref: "#/components/schemas/Transaction"
+          description: ""
   /api/transactions/transactions/withdraw:
     post:
       operationId: api_transactions_transactions_withdraw_create
       tags:
-      - Transactions
+        - Transactions
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Amount'
+              $ref: "#/components/schemas/Amount"
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Amount'
+              $ref: "#/components/schemas/Amount"
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Amount'
+              $ref: "#/components/schemas/Amount"
         required: true
       security:
-      - tokenAuth: []
+        - tokenAuth: []
       responses:
-        '201':
+        "201":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Transaction'
-          description: ''
-        '400':
+                $ref: "#/components/schemas/Transaction"
+          description: ""
+        "400":
           description: Insufficient balance
 components:
   schemas:
@@ -1083,7 +1086,7 @@ components:
           type: string
           maxLength: 120
       required:
-      - amount
+        - amount
     AuthTokenResponse:
       type: object
       properties:
@@ -1097,12 +1100,12 @@ components:
             type: string
         user:
           allOf:
-          - $ref: '#/components/schemas/ShopUser'
+            - $ref: "#/components/schemas/ShopUser"
           readOnly: true
       required:
-      - requires_password_change
-      - token
-      - user
+        - requires_password_change
+        - token
+        - user
     BannedCartellaItem:
       type: object
       properties:
@@ -1116,10 +1119,10 @@ components:
           type: string
           format: date-time
       required:
-      - cartella_index
-      - date
-      - game_id
-      - status
+        - cartella_index
+        - date
+        - game_id
+        - status
     ChangePassword:
       type: object
       properties:
@@ -1131,20 +1134,20 @@ components:
           writeOnly: true
           minLength: 8
         method:
-          $ref: '#/components/schemas/MethodEnum'
+          $ref: "#/components/schemas/MethodEnum"
         otp:
           type: string
           writeOnly: true
       required:
-      - current_password
-      - new_password
+        - current_password
+        - new_password
     DetailResponse:
       type: object
       properties:
         detail:
           type: string
       required:
-      - detail
+        - detail
     Game:
       type: object
       properties:
@@ -1157,7 +1160,7 @@ components:
           pattern: ^[-a-zA-Z0-9_]+$
         game_mode:
           allOf:
-          - $ref: '#/components/schemas/GameModeEnum'
+            - $ref: "#/components/schemas/GameModeEnum"
           readOnly: true
         bet_amount:
           type: string
@@ -1203,7 +1206,7 @@ components:
           readOnly: true
         status:
           allOf:
-          - $ref: '#/components/schemas/Status645Enum'
+            - $ref: "#/components/schemas/Status645Enum"
           readOnly: true
         winners:
           readOnly: true
@@ -1256,60 +1259,60 @@ components:
           readOnly: true
           nullable: true
       required:
-      - assigned_cartella_numbers
-      - awarded_claims
-      - banned_cartellas
-      - bet_amount
-      - call_cursor
-      - called_numbers
-      - cartella_draw_sequences
-      - cartella_number_map
-      - cartella_numbers
-      - cartella_statuses
-      - created_at
-      - current_called_number
-      - cut_percentage
-      - draw_sequence
-      - ended_at
-      - game_code
-      - game_mode
-      - id
-      - min_bet_per_cartella
-      - num_players
-      - payout_amount
-      - shop_cut_amount
-      - shop_players_data
-      - started_at
-      - status
-      - total_pool
-      - win_amount
-      - win_percentage
-      - winners
-      - winning_pattern
+        - assigned_cartella_numbers
+        - awarded_claims
+        - banned_cartellas
+        - bet_amount
+        - call_cursor
+        - called_numbers
+        - cartella_draw_sequences
+        - cartella_number_map
+        - cartella_numbers
+        - cartella_statuses
+        - created_at
+        - current_called_number
+        - cut_percentage
+        - draw_sequence
+        - ended_at
+        - game_code
+        - game_mode
+        - id
+        - min_bet_per_cartella
+        - num_players
+        - payout_amount
+        - shop_cut_amount
+        - shop_players_data
+        - started_at
+        - status
+        - total_pool
+        - win_amount
+        - win_percentage
+        - winners
+        - winning_pattern
     GameAuditReportResponse:
       type: object
       properties:
         game_history:
           type: array
           items:
-            $ref: '#/components/schemas/GameHistoryItem'
+            $ref: "#/components/schemas/GameHistoryItem"
         win_history:
           type: array
           items:
-            $ref: '#/components/schemas/WinHistoryItem'
+            $ref: "#/components/schemas/WinHistoryItem"
         banned_cartellas:
           type: array
           items:
-            $ref: '#/components/schemas/BannedCartellaItem'
+            $ref: "#/components/schemas/BannedCartellaItem"
         transactions:
           type: array
           items:
-            $ref: '#/components/schemas/ReportTransactionItem'
+            $ref: "#/components/schemas/ReportTransactionItem"
       required:
-      - banned_cartellas
-      - game_history
-      - transactions
-      - win_history
+        - banned_cartellas
+        - game_history
+        - transactions
+        - win_history
     GameCartellaDrawResponse:
       type: object
       properties:
@@ -1326,10 +1329,10 @@ components:
           items:
             type: integer
       required:
-      - cartella_draw_sequence
-      - cartella_number
-      - cartella_numbers
-      - game_code
+        - cartella_draw_sequence
+        - cartella_number
+        - cartella_numbers
+        - game_code
     GameClaim:
       type: object
       properties:
@@ -1343,8 +1346,8 @@ components:
             maximum: 75
             minimum: 1
       required:
-      - called_numbers
-      - cartella_index
+        - called_numbers
+        - cartella_index
     GameClaimResponse:
       type: object
       properties:
@@ -1365,7 +1368,7 @@ components:
           additionalProperties:
             type: string
         status:
-          $ref: '#/components/schemas/Status645Enum'
+          $ref: "#/components/schemas/Status645Enum"
         winner:
           type: integer
         total_pool:
@@ -1381,24 +1384,24 @@ components:
         detail:
           type: string
       required:
-      - cartella_index
-      - game_code
-      - is_bingo
+        - cartella_index
+        - game_code
+        - is_bingo
     GameComplete:
       type: object
       properties:
         status:
-          $ref: '#/components/schemas/GameCompleteStatusEnum'
+          $ref: "#/components/schemas/GameCompleteStatusEnum"
         winners:
           type: array
           items:
             type: integer
       required:
-      - status
+        - status
     GameCompleteStatusEnum:
       enum:
-      - completed
-      - cancelled
+        - completed
+        - cancelled
       type: string
       description: |-
         * `completed` - completed
@@ -1426,10 +1429,10 @@ components:
             items:
               type: integer
       required:
-      - bet_amount
-      - cartella_numbers
-      - num_players
-      - win_amount
+        - bet_amount
+        - cartella_numbers
+        - num_players
+        - win_amount
     GameHistoryItem:
       type: object
       properties:
@@ -1449,21 +1452,21 @@ components:
         shop_cut:
           type: string
         status:
-          $ref: '#/components/schemas/Status645Enum'
+          $ref: "#/components/schemas/Status645Enum"
       required:
-      - date
-      - game_id
-      - players
-      - shop_cut
-      - status
-      - total_pool
-      - winner
+        - date
+        - game_id
+        - players
+        - shop_cut
+        - status
+        - total_pool
+        - winner
     GameModeEnum:
       enum:
-      - standard
-      - shop_fixed4
-      - shop_online
-      - shop_offline
+        - standard
+        - shop_fixed4
+        - shop_online
+        - shop_offline
       type: string
       description: |-
         * `standard` - Standard
@@ -1494,44 +1497,44 @@ components:
         is_complete:
           type: boolean
       required:
-      - called_numbers
-      - game_code
-      - is_complete
+        - called_numbers
+        - game_code
+        - is_complete
     GameShuffleResponse:
       type: object
       properties:
         game_code:
           type: string
         status:
-          $ref: '#/components/schemas/Status645Enum'
+          $ref: "#/components/schemas/Status645Enum"
         message:
           type: string
       required:
-      - game_code
-      - message
-      - status
+        - game_code
+        - message
+        - status
     GameStartResponse:
       type: object
       properties:
         game_code:
           type: string
         status:
-          $ref: '#/components/schemas/Status645Enum'
+          $ref: "#/components/schemas/Status645Enum"
         started_at:
           type: string
           format: date-time
           nullable: true
       required:
-      - game_code
-      - started_at
-      - status
+        - game_code
+        - started_at
+        - status
     GameStateResponse:
       type: object
       properties:
         game_code:
           type: string
         status:
-          $ref: '#/components/schemas/Status645Enum'
+          $ref: "#/components/schemas/Status645Enum"
         started_at:
           type: string
           format: date-time
@@ -1553,13 +1556,13 @@ components:
           additionalProperties:
             type: string
       required:
-      - call_cursor
-      - called_numbers
-      - current_called_formatted
-      - current_called_number
-      - game_code
-      - started_at
-      - status
+        - call_cursor
+        - called_numbers
+        - current_called_formatted
+        - current_called_number
+        - game_code
+        - started_at
+        - status
     Login:
       type: object
       properties:
@@ -1572,21 +1575,21 @@ components:
           type: string
           writeOnly: true
       required:
-      - password
-      - username
+        - password
+        - username
     MeResponse:
       type: object
       properties:
         user:
           allOf:
-          - $ref: '#/components/schemas/ShopUser'
+            - $ref: "#/components/schemas/ShopUser"
           readOnly: true
       required:
-      - user
+        - user
     MethodEnum:
       enum:
-      - totp
-      - email_code
+        - totp
+        - email_code
       type: string
       description: |-
         * `totp` - totp
@@ -1603,9 +1606,9 @@ components:
           writeOnly: true
           minLength: 8
       required:
-      - new_password
-      - token
-      - uid
+        - new_password
+        - token
+        - uid
     PasswordResetRequest:
       type: object
       properties:
@@ -1616,8 +1619,8 @@ components:
           format: email
     PlayModeEnum:
       enum:
-      - online
-      - offline
+        - online
+        - offline
       type: string
       description: |-
         * `online` - Online
@@ -1636,9 +1639,9 @@ components:
           items:
             type: integer
       required:
-      - cartella_draw_sequence
-      - cartella_number
-      - cartella_numbers
+        - cartella_draw_sequence
+        - cartella_number
+        - cartella_numbers
     PublicCartellaLookup:
       type: object
       properties:
@@ -1652,8 +1655,8 @@ components:
           description: Up to 4 cartella numbers for the given game.
           maxItems: 4
       required:
-      - cartella_numbers
-      - game_id
+        - cartella_numbers
+        - game_id
     PublicCartellaResponse:
       type: object
       properties:
@@ -1670,9 +1673,9 @@ components:
         cartellas:
           type: array
           items:
-            $ref: '#/components/schemas/PublicCartellaItem'
+            $ref: "#/components/schemas/PublicCartellaItem"
         status:
-          $ref: '#/components/schemas/Status645Enum'
+          $ref: "#/components/schemas/Status645Enum"
         called_numbers:
           type: array
           items:
@@ -1681,18 +1684,18 @@ components:
           type: string
           format: date-time
       required:
-      - called_numbers
-      - cartellas
-      - created_at
-      - game_id
-      - missing_cartella_numbers
-      - requested_cartella_numbers
-      - status
+        - called_numbers
+        - cartellas
+        - created_at
+        - game_id
+        - missing_cartella_numbers
+        - requested_cartella_numbers
+        - status
     PurposeEnum:
       enum:
-      - enable
-      - disable
-      - change_password
+        - enable
+        - disable
+        - change_password
       type: string
       description: |-
         * `enable` - enable
@@ -1723,14 +1726,14 @@ components:
           type: object
           additionalProperties: {}
       required:
-      - amount
-      - balance_after
-      - balance_before
-      - created_at
-      - game_id
-      - id
-      - reference
-      - type
+        - amount
+        - balance_after
+        - balance_before
+        - created_at
+        - game_id
+        - id
+        - reference
+        - type
     ShopBingoCartellaSelect:
       type: object
       properties:
@@ -1748,9 +1751,9 @@ components:
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
       required:
-      - bet_per_cartella
-      - cartella_numbers
-      - player_name
+        - bet_per_cartella
+        - cartella_numbers
+        - player_name
     ShopBingoConfirmPayment:
       type: object
       properties:
@@ -1758,7 +1761,7 @@ components:
           type: string
           maxLength: 80
       required:
-      - player_name
+        - player_name
     ShopBingoSession:
       type: object
       properties:
@@ -1766,9 +1769,9 @@ components:
           type: string
           readOnly: true
         status:
-          $ref: '#/components/schemas/ShopBingoSessionStatusEnum'
+          $ref: "#/components/schemas/ShopBingoSessionStatusEnum"
         play_mode:
-          $ref: '#/components/schemas/PlayModeEnum'
+          $ref: "#/components/schemas/PlayModeEnum"
         fixed_players:
           type: integer
           maximum: 9223372036854775807
@@ -1795,8 +1798,8 @@ components:
           type: integer
           nullable: true
       required:
-      - session_id
-      - updated_at
+        - session_id
+        - updated_at
     ShopBingoSessionCreate:
       type: object
       properties:
@@ -1804,7 +1807,7 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-          default: '20.00'
+          default: "20.00"
         fixed_players:
           type: integer
           maximum: 7
@@ -1812,25 +1815,25 @@ components:
           default: 4
         play_mode:
           allOf:
-          - $ref: '#/components/schemas/PlayModeEnum'
+            - $ref: "#/components/schemas/PlayModeEnum"
           default: online
     ShopBingoSessionGameResponse:
       type: object
       properties:
         session:
-          $ref: '#/components/schemas/ShopBingoSession'
+          $ref: "#/components/schemas/ShopBingoSession"
         game_created:
           type: boolean
         game:
-          $ref: '#/components/schemas/Game'
+          $ref: "#/components/schemas/Game"
       required:
-      - game_created
-      - session
+        - game_created
+        - session
     ShopBingoSessionStatusEnum:
       enum:
-      - waiting
-      - locked
-      - cancelled
+        - waiting
+        - locked
+        - cancelled
       type: string
       description: |-
         * `waiting` - Waiting
@@ -1873,7 +1876,7 @@ components:
           type: boolean
         status:
           allOf:
-          - $ref: '#/components/schemas/Status7b3Enum'
+            - $ref: "#/components/schemas/Status7b3Enum"
           readOnly: true
         wallet_balance:
           type: string
@@ -1896,7 +1899,7 @@ components:
           readOnly: true
         two_factor_method:
           allOf:
-          - $ref: '#/components/schemas/TwoFactorMethodEnum'
+            - $ref: "#/components/schemas/TwoFactorMethodEnum"
           readOnly: true
         two_factor_totp_enabled:
           type: boolean
@@ -1914,21 +1917,21 @@ components:
           format: date-time
           readOnly: true
       required:
-      - commission_rate
-      - contact_email
-      - contact_phone
-      - created_at
-      - human_shop_id
-      - max_stake
-      - shop_code
-      - status
-      - two_factor_email_enabled
-      - two_factor_enabled
-      - two_factor_method
-      - two_factor_methods
-      - two_factor_totp_enabled
-      - username
-      - wallet_balance
+        - commission_rate
+        - contact_email
+        - contact_phone
+        - created_at
+        - human_shop_id
+        - max_stake
+        - shop_code
+        - status
+        - two_factor_email_enabled
+        - two_factor_enabled
+        - two_factor_method
+        - two_factor_methods
+        - two_factor_totp_enabled
+        - username
+        - wallet_balance
     ShopUser:
       type: object
       properties:
@@ -1950,7 +1953,7 @@ components:
           readOnly: true
           nullable: true
         status:
-          $ref: '#/components/schemas/Status7b3Enum'
+          $ref: "#/components/schemas/Status7b3Enum"
         contact_phone:
           type: string
           maxLength: 50
@@ -1985,7 +1988,7 @@ components:
         two_factor_enabled:
           type: boolean
         two_factor_method:
-          $ref: '#/components/schemas/TwoFactorMethodEnum'
+          $ref: "#/components/schemas/TwoFactorMethodEnum"
         two_factor_totp_enabled:
           type: boolean
         two_factor_email_enabled:
@@ -2001,19 +2004,19 @@ components:
           type: string
           format: date-time
       required:
-      - contact_email
-      - contact_phone
-      - human_shop_id
-      - id
-      - shop_code
-      - two_factor_methods
-      - username
+        - contact_email
+        - contact_phone
+        - human_shop_id
+        - id
+        - shop_code
+        - two_factor_methods
+        - username
     Status645Enum:
       enum:
-      - pending
-      - active
-      - completed
-      - cancelled
+        - pending
+        - active
+        - completed
+        - cancelled
       type: string
       description: |-
         * `pending` - Pending
@@ -2022,10 +2025,10 @@ components:
         * `cancelled` - Cancelled
     Status7b3Enum:
       enum:
-      - pending
-      - active
-      - suspended
-      - blocked
+        - pending
+        - active
+        - suspended
+        - blocked
       type: string
       description: |-
         * `pending` - Pending
@@ -2040,7 +2043,7 @@ components:
           readOnly: true
         tx_type:
           allOf:
-          - $ref: '#/components/schemas/TxTypeEnum'
+            - $ref: "#/components/schemas/TxTypeEnum"
           readOnly: true
         amount:
           type: string
@@ -2067,46 +2070,46 @@ components:
           format: date-time
           readOnly: true
       required:
-      - amount
-      - balance_after
-      - balance_before
-      - created_at
-      - id
-      - metadata
-      - reference
-      - tx_type
+        - amount
+        - balance_after
+        - balance_before
+        - created_at
+        - id
+        - metadata
+        - reference
+        - tx_type
     TwoFactorDisable:
       type: object
       properties:
         method:
-          $ref: '#/components/schemas/MethodEnum'
+          $ref: "#/components/schemas/MethodEnum"
         otp:
           type: string
           writeOnly: true
       required:
-      - otp
+        - otp
     TwoFactorEmailCode:
       type: object
       properties:
         purpose:
-          $ref: '#/components/schemas/PurposeEnum'
+          $ref: "#/components/schemas/PurposeEnum"
       required:
-      - purpose
+        - purpose
     TwoFactorEnable:
       type: object
       properties:
         method:
-          $ref: '#/components/schemas/MethodEnum'
+          $ref: "#/components/schemas/MethodEnum"
         otp:
           type: string
           writeOnly: true
       required:
-      - method
-      - otp
+        - method
+        - otp
     TwoFactorMethodEnum:
       enum:
-      - totp
-      - email_code
+        - totp
+        - email_code
       type: string
       description: |-
         * `totp` - Authenticator app
@@ -2121,15 +2124,15 @@ components:
           type: string
           readOnly: true
       required:
-      - provisioning_uri
-      - secret
+        - provisioning_uri
+        - secret
     TxTypeEnum:
       enum:
-      - deposit
-      - withdrawal
-      - bet_debit
-      - bet_credit
-      - adjustment
+        - deposit
+        - withdrawal
+        - bet_debit
+        - bet_credit
+        - adjustment
       type: string
       description: |-
         * `deposit` - Deposit
@@ -2155,11 +2158,11 @@ components:
           type: string
           format: date-time
       required:
-      - date
-      - game_id
-      - payout_amount
-      - winner_indexes
-      - winning_pattern
+        - date
+        - game_id
+        - payout_amount
+        - winner_indexes
+        - winning_pattern
   securitySchemes:
     tokenAuth:
       type: apiKey

@@ -133,26 +133,34 @@ WSGI_APPLICATION = "lulu_bingo.wsgi.application"
 # Database
 # --------------------------------------------------
 
+
+# --- Database: supports PostgreSQL and MySQL via DATABASE_URL ---
 database_url = get_env("DATABASE_URL")
 
 if database_url:
-    tmpPostgres = urlparse(database_url)
+    parsed = urlparse(database_url)
+    engine = None
+    if parsed.scheme in {"postgres", "postgresql"}:
+        engine = "django.db.backends.postgresql"
+        default_port = 5432
+    elif parsed.scheme in {"mysql"}:
+        engine = "django.db.backends.mysql"
+        default_port = 3306
+    else:
+        raise ValueError("DATABASE_URL must use a postgres, postgresql, or mysql scheme")
 
-    if tmpPostgres.scheme not in {"postgres", "postgresql"}:
-        raise ValueError("DATABASE_URL must use a postgres or postgresql scheme")
-
-    if not all([tmpPostgres.path, tmpPostgres.username, tmpPostgres.hostname]):
-        raise ValueError("DATABASE_URL is missing required PostgreSQL connection parts")
+    if not all([parsed.path, parsed.username, parsed.hostname]):
+        raise ValueError("DATABASE_URL is missing required connection parts")
 
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': tmpPostgres.path.replace('/', ''),
-            'USER': tmpPostgres.username,
-            'PASSWORD': tmpPostgres.password,
-            'HOST': tmpPostgres.hostname,
-            'PORT': tmpPostgres.port or 5432,
-            'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
+            'ENGINE': engine,
+            'NAME': parsed.path.lstrip('/'),
+            'USER': parsed.username,
+            'PASSWORD': parsed.password,
+            'HOST': parsed.hostname,
+            'PORT': parsed.port or default_port,
+            'OPTIONS': dict(parse_qsl(parsed.query)),
         }
     }
 elif ENVIRONMENT == "production":
@@ -222,9 +230,9 @@ REST_FRAMEWORK = {
 
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Dallol Bingo API",
+    "TITLE": "Lulu Bingo API",
     "DESCRIPTION": (
-        "Authentication & shop identity endpoints for Dallol Bingo. "
+        "Authentication & shop identity endpoints for Lulu Bingo. "
         "Shops are provisioned by HQ admins only; no self-signup is allowed. "
         "Each shop receives temporary credentials, must change the password on first login, "
         "and can be activated, suspended, or blocked centrally. Tokens issued here secure "
