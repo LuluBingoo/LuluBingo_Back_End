@@ -86,6 +86,7 @@ CORS_ALLOW_CREDENTIALS = str_to_bool(os.getenv("CORS_ALLOW_CREDENTIALS"), defaul
 # --------------------------------------------------
 
 INSTALLED_APPS = [
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -282,3 +283,80 @@ AUTH_USER_MODEL = "accounts.ShopUser"
 # --------------------------------------------------
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --------------------------------------------------
+# Jazzmin Admin Settings
+# --------------------------------------------------
+
+JAZZMIN_SETTINGS = {
+    "site_title": f"{BRAND_NAME} Admin",
+    "site_header": BRAND_NAME,
+    "site_brand": BRAND_NAME,
+    "welcome_sign": f"Welcome to the {BRAND_NAME} Admin Portal",
+    "copyright": f"{BRAND_NAME}",
+    "search_model": ["accounts.ShopUser", "games.Game"],
+    "user_avatar": None,
+    "topmenu_links": [
+        {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "App Frontend", "url": APP_BASE_URL, "new_window": True},
+    ],
+    "usermenu_links": [
+        {"name": "App Frontend", "url": APP_BASE_URL, "new_window": True, "icon": "fas fa-external-link-alt"},
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.Group": "fas fa-users",
+        "accounts.ShopUser": "fas fa-store",
+        "games.Game": "fas fa-dice",
+        "games.Ticket": "fas fa-ticket-alt",
+        "games.WinningPattern": "fas fa-star",
+        "transactions.Transaction": "fas fa-money-bill-wave",
+        "transactions.Deposit": "fas fa-hand-holding-usd",
+        "transactions.Withdrawal": "fas fa-money-check-alt",
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": True,
+    "custom_css": None,
+    "custom_js": None,
+    "show_ui_builder": False,
+    "changeform_format": "horizontal_tabs",
+    "changeform_format_overrides": {"auth.user": "collapsible", "auth.group": "vertical_tabs"},
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-dark",
+    "accent": "accent-primary",
+    "navbar": "navbar-dark",
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": True,
+    "theme": "pulse",
+    "dark_mode_theme": "darkly",
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    },
+    "actions_sticky_top": True
+}
