@@ -31,7 +31,7 @@ Create these **exact** names:
 1. In cPanel, open **Setup Python App**.
 2. Create app with:
    - Python version: `3.11` (or closest available)
-   - Application root: `public_html/lulubingo_backend`
+   - Application root: your API subdomain root folder (for example `apiludisbingo`)
    - Application URL: your backend URL/subdomain
    - Application startup file: `passenger_wsgi.py`
    - Application Entry point: `application`
@@ -42,7 +42,7 @@ Create these **exact** names:
 Run in cPanel Terminal (or SSH if available):
 
 ```bash
-cd ~/public_html/lulubingo_backend
+cd ~/apiludisbingo
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py collectstatic --noinput
@@ -52,7 +52,7 @@ python manage.py collectstatic --noinput
 
 Create and keep this file on server only:
 
-`/home/<CPANEL_USERNAME>/public_html/lulubingo_backend/.env`
+`/home/<CPANEL_USERNAME>/apiludisbingo/.env`
 
 Minimum fields to set:
 
@@ -72,7 +72,7 @@ Notes:
 ## 6. How Deploy Works
 
 - Trigger: push to `master`
-- Upload target: `./lulubingo_backend/` (under FTP root, usually `public_html`)
+- Upload target: FTP root `./` (your API subdomain root)
 - Protocol: `ftp` on port `21` (set in workflow for better compatibility on some cPanel shared hosts)
 - Auto restart signal: workflow updates `tmp/restart.txt`
 
@@ -83,7 +83,7 @@ If your provider requires FTPS, switch workflow `protocol` from `ftp` to `ftps`.
 If Django admin appears without styles/scripts, run:
 
 ```bash
-cd ~/public_html/lulubingo_backend
+cd ~/apiludisbingo
 python manage.py collectstatic --noinput
 ```
 

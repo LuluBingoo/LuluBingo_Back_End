@@ -28,8 +28,8 @@ jobs:
           protocol: ftp
           port: 21
           local-dir: ./
-          # For accounts rooted at public_html, deploy backend under a subfolder.
-          server-dir: ./lulubingo_backend/
+          # Deploy to FTP root (subdomain document root), no extra subfolder.
+          server-dir: ./
           exclude: |
             **/.git*/**
             **/.github/**
