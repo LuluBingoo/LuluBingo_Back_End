@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from accounts.views import HealthCheckView
 
 admin.site.site_header = "LuluBingo Admin"
 admin.site.site_title = "LuluBingo"
@@ -29,4 +30,5 @@ urlpatterns = [
     path('api/games/', include('games.urls')),
     path('api/transactions/', include('transactions.urls')),
     path('api/', include('accounts.urls')),
+    path('', HealthCheckView.as_view(), name='health-check'),
 ]

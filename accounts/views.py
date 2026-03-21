@@ -11,6 +11,7 @@ from rest_framework import permissions, status
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.http import JsonResponse
 
 from .models import LoginAttempt
 from .emailing import send_branded_email
@@ -424,3 +425,8 @@ class TwoFactorEmailCodeView(APIView):
         )
 
         return Response({"detail": "Verification code sent to your email.", "purpose": purpose})
+
+
+class HealthCheckView(APIView):
+    def get(self, request):
+        return JsonResponse({"status": "Backend is working!"})
