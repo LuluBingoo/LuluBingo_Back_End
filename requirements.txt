@@ -14,8 +14,9 @@ idna==3.11
 inflection==0.5.1
 jsonschema==4.25.1
 jsonschema-specifications==2025.9.1
+load-dotenv==0.1.0
 packaging==26.0
-PyMySQL==1.1.0
+psycopg2-binary==2.9.10
 PyJWT==2.10.1
 pyotp==2.9.0
 python-dotenv==1.0.1

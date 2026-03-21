@@ -1,19 +1,19 @@
-
-
-# --- PyMySQL auto-enable for MySQL ---
+import os
 import sys
-# Place after get_env is defined
-if 'mysql' in (get_env("DATABASE_URL") or '').lower():
-    try:
-        import pymysql
-        pymysql.install_as_MySQLdb()
-    except ImportError:
-        print("PyMySQL not installed, but required for MySQL connections.", file=sys.stderr)
+from pathlib import Path
+from urllib.parse import urlparse, parse_qsl
+from dotenv import load_dotenv
+
+# --------------------------------------------------
+# Base / Env setup
 # --------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+# --------------------------------------------------
+# Helper functions (MUST COME FIRST)
+# --------------------------------------------------
 
 def get_env(name: str, default: str | None = None) -> str | None:
     value = os.getenv(name, default)
@@ -39,6 +39,22 @@ def normalize_origin(origin: str) -> str:
 
 
 # --------------------------------------------------
+# PyMySQL auto-enable for MySQL (FIXED POSITION)
+# --------------------------------------------------
+
+database_url_check = get_env("DATABASE_URL") or ""
+
+if database_url_check.startswith("mysql"):
+    try:
+        import pymysql
+        pymysql.install_as_MySQLdb()
+    except ImportError:
+        print(
+            "PyMySQL not installed, but required for MySQL connections.",
+            file=sys.stderr
+        )
+
+# --------------------------------------------------
 # Core settings
 # --------------------------------------------------
 
@@ -53,7 +69,6 @@ ALLOWED_HOSTS = [
     if h.strip()
 ]
 
-
 # --------------------------------------------------
 # CORS
 # --------------------------------------------------
@@ -65,7 +80,6 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 CORS_ALLOW_CREDENTIALS = str_to_bool(os.getenv("CORS_ALLOW_CREDENTIALS"), default=True)
-
 
 # --------------------------------------------------
 # Applications
@@ -91,7 +105,6 @@ INSTALLED_APPS = [
     "transactions",
 ]
 
-
 # --------------------------------------------------
 # Middleware
 # --------------------------------------------------
@@ -107,7 +120,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
 
 # --------------------------------------------------
 # URLs / WSGI
@@ -132,18 +144,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "lulu_bingo.wsgi.application"
 
-
 # --------------------------------------------------
 # Database
 # --------------------------------------------------
 
-
-# --- Database: supports PostgreSQL and MySQL via DATABASE_URL ---
 database_url = get_env("DATABASE_URL")
 
 if database_url:
     parsed = urlparse(database_url)
-    engine = None
+
     if parsed.scheme in {"postgres", "postgresql"}:
         engine = "django.db.backends.postgresql"
         default_port = 5432
@@ -151,10 +160,10 @@ if database_url:
         engine = "django.db.backends.mysql"
         default_port = 3306
     else:
-        raise ValueError("DATABASE_URL must use a postgres, postgresql, or mysql scheme")
+        raise ValueError("DATABASE_URL must use postgres, postgresql, or mysql")
 
     if not all([parsed.path, parsed.username, parsed.hostname]):
-        raise ValueError("DATABASE_URL is missing required connection parts")
+        raise ValueError("DATABASE_URL missing required parts")
 
     DATABASES = {
         'default': {
@@ -167,8 +176,10 @@ if database_url:
             'OPTIONS': dict(parse_qsl(parsed.query)),
         }
     }
+
 elif ENVIRONMENT == "production":
     raise ValueError("DATABASE_URL is required in production")
+
 else:
     DATABASES = {
         "default": {
@@ -177,26 +188,16 @@ else:
         }
     }
 
-
 # --------------------------------------------------
 # Password validation
 # --------------------------------------------------
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
-
 
 # --------------------------------------------------
 # Internationalization
@@ -208,7 +209,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-
 # --------------------------------------------------
 # Static files
 # --------------------------------------------------
@@ -216,7 +216,6 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
 
 # --------------------------------------------------
 # Django REST Framework
@@ -232,19 +231,15 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
-
 SPECTACULAR_SETTINGS = {
     "TITLE": "Lulu Bingo API",
     "DESCRIPTION": (
         "Authentication & shop identity endpoints for Lulu Bingo. "
         "Shops are provisioned by HQ admins only; no self-signup is allowed. "
-        "Each shop receives temporary credentials, must change the password on first login, "
-        "and can be activated, suspended, or blocked centrally. Tokens issued here secure "
-        "all subsequent Bingo operations."
+        "Each shop receives temporary credentials and must change password on first login."
     ),
     "VERSION": "0.1.0",
 }
-
 
 # --------------------------------------------------
 # Email
@@ -254,34 +249,33 @@ EMAIL_HOST = get_env("EMAIL_HOST", "") or ""
 EMAIL_PORT = int(get_env("EMAIL_PORT", "587") or "587")
 EMAIL_HOST_USER = get_env("EMAIL_HOST_USER", "") or ""
 EMAIL_HOST_PASSWORD = get_env("EMAIL_HOST_PASSWORD", "") or ""
+
 EMAIL_HOST_USER = get_env("EMAIL_LOGIN_USER", EMAIL_HOST_USER) or ""
 EMAIL_HOST_PASSWORD = get_env("EMAIL_LOGIN_PASSWORD", EMAIL_HOST_PASSWORD) or ""
+
 EMAIL_USE_TLS = str_to_bool(get_env("EMAIL_USE_TLS"), True)
 EMAIL_USE_SSL = str_to_bool(get_env("EMAIL_USE_SSL"), False)
+
 EMAIL_TIMEOUT = int(get_env("EMAIL_TIMEOUT", "10") or "10")
 EMAIL_FAIL_SILENTLY = str_to_bool(get_env("EMAIL_FAIL_SILENTLY"), True)
-EMAIL_RAISE_EXCEPTIONS = str_to_bool(get_env("EMAIL_RAISE_EXCEPTIONS"), False)
-EMAIL_SEND_ASYNC = str_to_bool(get_env("EMAIL_SEND_ASYNC"), True)
 
-# Prefer SMTP when host is provided; otherwise fall back to console for local dev.
 EMAIL_BACKEND = get_env(
     "EMAIL_BACKEND",
     "django.core.mail.backends.smtp.EmailBackend" if EMAIL_HOST else "django.core.mail.backends.console.EmailBackend",
-) or ("django.core.mail.backends.smtp.EmailBackend" if EMAIL_HOST else "django.core.mail.backends.console.EmailBackend")
+)
+
 DEFAULT_FROM_EMAIL = get_env("DEFAULT_FROM_EMAIL", "noreply@lulubingo.com") or "noreply@lulubingo.com"
 
-# Branded email presentation
+# Branding
 BRAND_NAME = get_env("BRAND_NAME", "LULU Bingo") or "LULU Bingo"
 BRAND_LOGO_URL = get_env("BRAND_LOGO_URL", "") or ""
 APP_BASE_URL = get_env("APP_BASE_URL", "http://localhost:5173") or "http://localhost:5173"
-
 
 # --------------------------------------------------
 # Custom User
 # --------------------------------------------------
 
 AUTH_USER_MODEL = "accounts.ShopUser"
-
 
 # --------------------------------------------------
 # Defaults
