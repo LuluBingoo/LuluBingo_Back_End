@@ -1,0 +1,48 @@
+name: Deploy Backend to cPanel
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare deploy package
+        run: |
+          mkdir -p deploy
+          rsync -av \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='env/' \
+            --exclude='.venv/' \
+            --exclude='__pycache__/' \
+            --exclude='*.pyc' \
+            --exclude='*.pyo' \
+            --exclude='node_modules/' \
+            --exclude='.env' \
+            --exclude='db.sqlite3' \
+            --exclude='*.log' \
+            ./ deploy/
+
+          # cPanel Passenger picks up restart when this file changes.
+          mkdir -p deploy/tmp
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > deploy/tmp/restart.txt
+
+      - name: Deploy files via FTP/FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USERNAME }}
+          password: ${{ secrets.CPANEL_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: deploy/
+          # For accounts rooted at public_html, deploy backend under a subfolder.
+          server-dir: ./lulubingo_backend/
+          dangerous-clean-slate: false

@@ -27,6 +27,13 @@ def str_to_bool(value: str | None, default: bool = False) -> bool:
     return value.lower() in {"1", "true", "yes", "on"}
 
 
+def normalize_origin(origin: str) -> str:
+    parsed = urlparse(origin.strip())
+    if parsed.scheme and parsed.netloc:
+        return f"{parsed.scheme}://{parsed.netloc}"
+    return origin.strip()
+
+
 # --------------------------------------------------
 # Core settings
 # --------------------------------------------------
@@ -49,7 +56,7 @@ ALLOWED_HOSTS = [
 
 CORS_ALLOW_ALL_ORIGINS = str_to_bool(os.getenv("CORS_ALLOW_ALL_ORIGINS"), default=False)
 CORS_ALLOWED_ORIGINS = [
-    origin.strip()
+    normalize_origin(origin)
     for origin in (get_env("CORS_ALLOWED_ORIGINS", "http://localhost:5173") or "http://localhost:5173").split(",")
     if origin.strip()
 ]
@@ -87,6 +94,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -193,7 +201,9 @@ USE_TZ = True
 # Static files
 # --------------------------------------------------
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 # --------------------------------------------------
