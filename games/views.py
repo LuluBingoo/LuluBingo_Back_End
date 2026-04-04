@@ -617,6 +617,40 @@ class GameClaimView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            request_called_numbers = request.data.get("called_numbers")
+            called_numbers_sequence: list[int] | None = None
+            if request_called_numbers is not None:
+                if not isinstance(request_called_numbers, list) or not request_called_numbers:
+                    return Response(
+                        {"detail": "called_numbers must be a non-empty list when provided"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                seen_numbers: set[int] = set()
+                parsed_called_numbers: list[int] = []
+                for raw_value in request_called_numbers:
+                    try:
+                        called_number = int(raw_value)
+                    except (TypeError, ValueError):
+                        return Response(
+                            {"detail": "called_numbers must contain only integers between 1 and 75"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    if called_number < 1 or called_number > 75:
+                        return Response(
+                            {"detail": "called_numbers must contain only integers between 1 and 75"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    if called_number in seen_numbers:
+                        continue
+
+                    seen_numbers.add(called_number)
+                    parsed_called_numbers.append(called_number)
+
+                called_numbers_sequence = parsed_called_numbers
+
             cartella_statuses = _ensure_cartella_statuses(game)
 
             banned = set(game.banned_cartellas or [])
@@ -638,7 +672,8 @@ class GameClaimView(APIView):
                     status=status.HTTP_200_OK,
                 )
 
-            called_numbers = set(game.called_numbers or [])
+            called_numbers_sequence = called_numbers_sequence or list(game.called_numbers or [])
+            called_numbers = set(called_numbers_sequence)
             board = game.cartella_numbers[cartella_index]
             detected_pattern = _detect_winning_pattern(board, called_numbers)
             selected_pattern = pattern or detected_pattern or "row"
@@ -671,7 +706,7 @@ class GameClaimView(APIView):
                             ),
                             "cartella_statuses": cartella_statuses,
                             "status": game.status,
-                            "called_numbers": game.called_numbers,
+                            "called_numbers": called_numbers_sequence,
                             "detail": "No bingo yet (row or diagonal only). Ban this cartella only if you confirm.",
                         },
                         status=status.HTTP_200_OK,
@@ -695,7 +730,7 @@ class GameClaimView(APIView):
                         "cartella_status": "banned",
                         "cartella_statuses": cartella_statuses,
                         "status": game.status,
-                        "called_numbers": game.called_numbers,
+                        "called_numbers": called_numbers_sequence,
                         "detail": "Banned.",
                     },
                     status=status.HTTP_200_OK,
