@@ -219,12 +219,21 @@ class GameCompleteSerializer(serializers.ModelSerializer):
 
 class GameClaimSerializer(serializers.Serializer):
     cartella_index = serializers.IntegerField(min_value=0)
-    called_numbers = serializers.ListField(child=serializers.IntegerField(min_value=1, max_value=75), allow_empty=False)
+    called_numbers = serializers.ListField(
+        child=serializers.IntegerField(min_value=1, max_value=75),
+        allow_empty=False,
+        required=False,
+    )
+    pattern = serializers.ChoiceField(choices=[("row", "row"), ("diagonal", "diagonal")], required=False)
+    ban_on_false_claim = serializers.BooleanField(required=False, default=True)
 
     def validate(self, attrs):
         game: Game = self.context["game"]
         cartella_index = attrs["cartella_index"]
-        called_numbers = attrs["called_numbers"]
+
+        called_numbers = attrs.get("called_numbers")
+        if called_numbers is None:
+            return attrs
 
         if game.status != Game.Status.ACTIVE:
             raise serializers.ValidationError("Claims are only allowed for active games")
@@ -390,6 +399,7 @@ class GameClaimResponseSerializer(serializers.Serializer):
     pattern = serializers.CharField(required=False)
     is_bingo = serializers.BooleanField()
     is_banned = serializers.BooleanField(required=False)
+    would_ban = serializers.BooleanField(required=False)
     cartella_status = serializers.CharField(required=False)
     cartella_statuses = serializers.DictField(child=serializers.CharField(), required=False)
     status = serializers.ChoiceField(choices=Game.Status.choices, required=False)

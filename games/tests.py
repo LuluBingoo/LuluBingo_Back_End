@@ -282,6 +282,44 @@ class GameTests(APITestCase):
         self.assertTrue(winning_claim.data["is_bingo"])
         self.assertEqual(winning_claim.data["pattern"], "row")
 
+    def test_claim_preview_can_skip_immediate_ban(self):
+        headers = self.auth_headers()
+        payload = {
+            "bet_amount": "10.00",
+            "num_players": 1,
+            "win_amount": "50.00",
+            "cartella_numbers": [list(range(1, 26))],
+        }
+        create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
+        code = create_resp.data["game_code"]
+
+        preview_claim = self.client.post(
+            reverse("game-claim", args=[code]),
+            {"cartella_index": 0, "ban_on_false_claim": False},
+            format="json",
+            **headers,
+        )
+        self.assertEqual(preview_claim.status_code, status.HTTP_200_OK)
+        self.assertFalse(preview_claim.data["is_bingo"])
+        self.assertFalse(preview_claim.data.get("is_banned", False))
+        self.assertTrue(preview_claim.data.get("would_ban", False))
+
+        game = Game.objects.get(game_code=code)
+        self.assertEqual(game.banned_cartellas, [])
+
+        ban_claim = self.client.post(
+            reverse("game-claim", args=[code]),
+            {"cartella_index": 0, "ban_on_false_claim": True},
+            format="json",
+            **headers,
+        )
+        self.assertEqual(ban_claim.status_code, status.HTTP_200_OK)
+        self.assertFalse(ban_claim.data["is_bingo"])
+        self.assertTrue(ban_claim.data.get("is_banned", False))
+
+        game.refresh_from_db()
+        self.assertEqual(game.banned_cartellas, [0])
+
     def test_game_transactions_created(self):
         headers = self.auth_headers()
         payload = {

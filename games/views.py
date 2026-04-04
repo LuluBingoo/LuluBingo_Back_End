@@ -578,6 +578,18 @@ class GameClaimView(APIView):
             cartella_index = request.data.get("cartella_index")
             pattern_raw = request.data.get("pattern")
             pattern = str(pattern_raw).strip().lower() if pattern_raw is not None else ""
+            ban_on_false_claim_raw = request.data.get("ban_on_false_claim", True)
+            if isinstance(ban_on_false_claim_raw, bool):
+                ban_on_false_claim = ban_on_false_claim_raw
+            elif isinstance(ban_on_false_claim_raw, str):
+                ban_on_false_claim = ban_on_false_claim_raw.strip().lower() in {
+                    "1",
+                    "true",
+                    "yes",
+                    "on",
+                }
+            else:
+                ban_on_false_claim = bool(ban_on_false_claim_raw)
 
             if game.status != Game.Status.ACTIVE:
                 return Response(
@@ -642,6 +654,29 @@ class GameClaimView(APIView):
             }
 
             if not is_winner:
+                if not ban_on_false_claim:
+                    cartella_statuses[str(cartella_index)] = cartella_statuses.get(
+                        str(cartella_index), "active"
+                    )
+                    return Response(
+                        {
+                            "game_code": game.game_code,
+                            "cartella_index": cartella_index,
+                            "pattern": selected_pattern,
+                            "is_bingo": False,
+                            "is_banned": False,
+                            "would_ban": True,
+                            "cartella_status": cartella_statuses.get(
+                                str(cartella_index), "active"
+                            ),
+                            "cartella_statuses": cartella_statuses,
+                            "status": game.status,
+                            "called_numbers": game.called_numbers,
+                            "detail": "No bingo yet (row or diagonal only). Ban this cartella only if you confirm.",
+                        },
+                        status=status.HTTP_200_OK,
+                    )
+
                 banned.add(cartella_index)
                 game.banned_cartellas = sorted(banned)
                 cartella_statuses[str(cartella_index)] = "banned"
