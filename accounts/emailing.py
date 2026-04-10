@@ -10,19 +10,19 @@ logger = logging.getLogger(__name__)
 
 
 def _resolve_from_email() -> str:
-  return getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@lulubingo.com")
+    return getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@lulubingo.com")
 
 
 def _should_raise_email_errors() -> bool:
-  return bool(getattr(settings, "EMAIL_RAISE_EXCEPTIONS", False))
+    return bool(getattr(settings, "EMAIL_RAISE_EXCEPTIONS", False))
 
 
 def _should_send_async() -> bool:
-  return bool(getattr(settings, "EMAIL_SEND_ASYNC", False))
+    return bool(getattr(settings, "EMAIL_SEND_ASYNC", False))
 
 
 def _should_fail_silently() -> bool:
-  return bool(getattr(settings, "EMAIL_FAIL_SILENTLY", False))
+    return bool(getattr(settings, "EMAIL_FAIL_SILENTLY", False))
 
 
 def _deliver_email(
@@ -55,10 +55,10 @@ def send_branded_email(
     cta_url: str | None = None,
 ) -> bool:
     if not to_email:
-    return False
+        return False
 
-  raise_errors = _should_raise_email_errors()
-  send_async = _should_send_async() and not raise_errors
+    raise_errors = _should_raise_email_errors()
+    send_async = _should_send_async() and not raise_errors
 
     from_email = _resolve_from_email()
     brand_name = getattr(settings, "BRAND_NAME", "LULU Bingo")
@@ -76,9 +76,9 @@ def send_branded_email(
     cta_html = ""
     if cta_text and cta_url:
         cta_html = (
-            f'<div style="margin:24px 0 8px;">'
+            '<div style="margin:24px 0 8px;">'
             f'<a href="{escape(cta_url)}" '
-            f'style="display:inline-block;padding:12px 18px;background:#b91c1c;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;">'
+            'style="display:inline-block;padding:12px 18px;background:#b91c1c;color:#fff;text-decoration:none;border-radius:10px;font-weight:700;">'
             f"{escape(cta_text)}</a></div>"
         )
 
@@ -96,7 +96,7 @@ def send_branded_email(
           {cta_html}
           <hr style=\"border:none;border-top:1px solid #e2e8f0;margin:20px 0 16px;\" />
           <p style=\"margin:0;color:#475569;font-size:12px;line-height:1.6;\">
-            Sent by {escape(brand_name)} Security • From: {escape(from_email)}
+            Sent by {escape(brand_name)} Security - From: {escape(from_email)}
           </p>
           <p style=\"margin:24px 0 0;color:#64748b;font-size:12px;line-height:1.5;\">
             This mailbox is not monitored. Please do not reply to this email.
@@ -106,7 +106,10 @@ def send_branded_email(
     </div>
     """
 
-    plain_body = f"{heading}\n\n{message}\n\nThis mailbox is not monitored. Please do not reply to this email."
+    plain_body = (
+        f"{heading}\n\n{message}\n\n"
+        "This mailbox is not monitored. Please do not reply to this email."
+    )
 
     email = EmailMultiAlternatives(
         subject=subject,
@@ -117,14 +120,14 @@ def send_branded_email(
     email.attach_alternative(html_body, "text/html")
 
     if send_async:
-      worker = threading.Thread(
-        target=_deliver_email,
-        args=(email, to_email),
-        kwargs={"raise_errors": False},
-        daemon=True,
-        name="lulubingo-email",
-      )
-      worker.start()
-      return True
+        worker = threading.Thread(
+            target=_deliver_email,
+            args=(email, to_email),
+            kwargs={"raise_errors": False},
+            daemon=True,
+            name="lulubingo-email",
+        )
+        worker.start()
+        return True
 
     return _deliver_email(email, to_email, raise_errors=raise_errors)
