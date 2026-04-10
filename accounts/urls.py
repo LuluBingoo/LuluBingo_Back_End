@@ -2,6 +2,7 @@ from django.urls import path
 
 from .admin_views import (
     AdminGameListView,
+    AdminShopBalanceDeductView,
     AdminManagerDetailView,
     AdminManagerListCreateView,
     AdminShopBalanceTopUpView,
@@ -39,6 +40,7 @@ urlpatterns = [
     path("admin/shops", AdminShopListCreateView.as_view(), name="admin-shops"),
     path("admin/shops/<int:user_id>", AdminShopDetailView.as_view(), name="admin-shop-detail"),
     path("admin/shops/<int:user_id>/fill-balance", AdminShopBalanceTopUpView.as_view(), name="admin-shop-fill-balance"),
+    path("admin/shops/<int:user_id>/deduct-balance", AdminShopBalanceDeductView.as_view(), name="admin-shop-deduct-balance"),
     path("admin/games", AdminGameListView.as_view(), name="admin-games"),
     path("admin/transactions", AdminTransactionListView.as_view(), name="admin-transactions"),
     path("shop/profile", ShopProfileView.as_view(), name="shop-profile"),

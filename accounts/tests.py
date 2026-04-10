@@ -307,3 +307,53 @@ class AuthTests(APITestCase):
         self.assertGreaterEqual(len(mail.outbox), 1)
         self.assertIn("Reserve top-up received", mail.outbox[0].subject)
         self.assertIn("shop-topup@example.com", mail.outbox[0].to)
+
+    def test_admin_deduct_requires_reason_and_sends_email(self):
+        manager = ShopUser.objects.create_user(
+            username="manager3",
+            password="managerpass123",
+            name="Manager Three",
+            contact_email="manager3@example.com",
+            contact_phone="+251900000003",
+            role=ShopUser.Role.MANAGER,
+        )
+        manager.status = ShopUser.Status.ACTIVE
+        manager.is_staff = True
+        manager.save()
+
+        shop = ShopUser.objects.create_user(
+            username="shop-deduct",
+            password="shopDeductPass1",
+            name="Shop Deduct",
+            contact_email="shop-deduct@example.com",
+            contact_phone="+251900000303",
+            role=ShopUser.Role.SHOP,
+        )
+        shop.status = ShopUser.Status.ACTIVE
+        shop.wallet_balance = "500"
+        shop.save()
+
+        self.client.force_authenticate(user=manager)
+
+        missing_reason = self.client.post(
+            reverse("admin-shop-deduct-balance", kwargs={"user_id": shop.id}),
+            {"amount": "100"},
+            format="json",
+        )
+        self.assertEqual(missing_reason.status_code, status.HTTP_400_BAD_REQUEST)
+
+        mail.outbox.clear()
+        resp = self.client.post(
+            reverse("admin-shop-deduct-balance", kwargs={"user_id": shop.id}),
+            {
+                "amount": "125",
+                "reason": "Manual reconciliation correction",
+                "reference": "test-deduct-1",
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp.data["transaction"]["tx_type"], "withdrawal")
+        self.assertGreaterEqual(len(mail.outbox), 1)
+        self.assertIn("Reserve deduction applied", mail.outbox[0].subject)
+        self.assertIn("shop-deduct@example.com", mail.outbox[0].to)

@@ -12,10 +12,11 @@ from rest_framework.views import APIView
 from games.models import Game
 from transactions.models import Transaction
 from transactions.serializers import TransactionSerializer
-from transactions.services import apply_transaction
+from transactions.services import TransactionError, apply_transaction
 
 from .admin_serializers import (
     AdminGameListSerializer,
+    AdminShopBalanceDeductSerializer,
     AdminShopBalanceTopUpSerializer,
     AdminShopCreateSerializer,
     AdminShopUpdateSerializer,
@@ -482,6 +483,81 @@ class AdminShopBalanceTopUpView(APIView):
             message=(
                 "A reserve top-up was applied to your shop account.\n"
                 f"Credited amount: {_format_money(amount)}\n"
+                f"Reference: {reference}\n"
+                f"Updated reserve balance: {_format_money(shop.wallet_balance)}"
+            ),
+            cta_text="View account",
+            cta_url=_app_base_url(),
+            banner_text="Balance Update",
+        )
+
+        return Response(
+            {
+                "shop": ShopUserSerializer(shop).data,
+                "transaction": TransactionSerializer(tx).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AdminShopBalanceDeductView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsManagerPermission]
+
+    def _get_shop(self, user_id: int) -> ShopUser:
+        return get_object_or_404(ShopUser, pk=user_id, role=ShopUser.Role.SHOP)
+
+    @extend_schema(
+        request=AdminShopBalanceDeductSerializer,
+        responses={
+            201: OpenApiResponse(description="Shop balance deducted"),
+            400: OpenApiResponse(description="Invalid request or insufficient balance"),
+            404: OpenApiResponse(description="Shop not found"),
+        },
+        tags=["Admin"],
+    )
+    def post(self, request, user_id: int):
+        shop = self._get_shop(user_id)
+        serializer = AdminShopBalanceDeductSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        amount = serializer.validated_data["amount"]
+        reason = serializer.validated_data["reason"]
+        reference = (
+            serializer.validated_data.get("reference")
+            or f"shop:{shop.shop_code}:admin_deduction"
+        )
+
+        try:
+            tx = apply_transaction(
+                user=shop,
+                amount=amount,
+                tx_type=Transaction.Type.WITHDRAWAL,
+                reference=reference,
+                metadata={
+                    "event": "shop_balance_deduction",
+                    "reason": reason,
+                    "shop_id": shop.id,
+                    "shop_code": shop.shop_code,
+                    "shop_username": shop.username,
+                    "deducted_by_user_id": request.user.id,
+                    "deducted_by_username": request.user.username,
+                },
+                actor_role=Transaction.ActorRole.ADMIN,
+                operation_source=Transaction.OperationSource.ADMIN,
+            )
+        except TransactionError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        shop.refresh_from_db(fields=["wallet_balance"])
+
+        _send_operation_email(
+            shop,
+            subject="Reserve deduction applied",
+            heading="A reserve deduction was applied",
+            message=(
+                "A reserve deduction was applied to your shop account.\n"
+                f"Deducted amount: {_format_money(amount)}\n"
+                f"Reason: {reason}\n"
                 f"Reference: {reference}\n"
                 f"Updated reserve balance: {_format_money(shop.wallet_balance)}"
             ),
