@@ -19,6 +19,7 @@ class AuthTests(APITestCase):
             password="pass1234",
             name="Shop One",
             contact_email="shop1@example.com",
+            contact_phone="+251900100001",
         )
         self.user.status = ShopUser.Status.ACTIVE
         self.user.must_change_password = False
@@ -64,6 +65,7 @@ class AuthTests(APITestCase):
             password="temp1234",
             name="Pending Shop",
             contact_email="pending@example.com",
+            contact_phone="+251900100002",
         )
         pending.status = ShopUser.Status.PENDING
         pending.save()
@@ -90,6 +92,7 @@ class AuthTests(APITestCase):
             password="temp1234",
             name="Shop Two",
             contact_email="shop2@example.com",
+            contact_phone="+251900100003",
         )
         user.status = ShopUser.Status.ACTIVE
         user.must_change_password = True
@@ -232,3 +235,75 @@ class AuthTests(APITestCase):
         self.assertEqual(disable_resp.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
         self.assertFalse(self.user.two_factor_enabled)
+
+    def test_admin_create_shop_sends_welcome_email(self):
+        manager = ShopUser.objects.create_user(
+            username="manager1",
+            password="managerpass123",
+            name="Manager One",
+            contact_email="manager1@example.com",
+            contact_phone="+251900000001",
+            role=ShopUser.Role.MANAGER,
+        )
+        manager.status = ShopUser.Status.ACTIVE
+        manager.is_staff = True
+        manager.save()
+
+        self.client.force_authenticate(user=manager)
+        mail.outbox.clear()
+
+        payload = {
+            "username": "newshop1",
+            "password": "newshoppass123",
+            "name": "New Shop One",
+            "contact_phone": "+251900000101",
+            "contact_email": "newshop1@example.com",
+            "status": "active",
+            "must_change_password": True,
+            "shop_cut_percentage": "10",
+            "lulu_cut_percentage": "15",
+            "initial_balance": "1000",
+        }
+
+        resp = self.client.post(reverse("admin-shops"), payload, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertGreaterEqual(len(mail.outbox), 1)
+        self.assertIn("Welcome to Lulu Bingo", mail.outbox[0].subject)
+        self.assertIn("newshop1@example.com", mail.outbox[0].to)
+
+    def test_admin_topup_sends_email_notification(self):
+        manager = ShopUser.objects.create_user(
+            username="manager2",
+            password="managerpass123",
+            name="Manager Two",
+            contact_email="manager2@example.com",
+            contact_phone="+251900000002",
+            role=ShopUser.Role.MANAGER,
+        )
+        manager.status = ShopUser.Status.ACTIVE
+        manager.is_staff = True
+        manager.save()
+
+        shop = ShopUser.objects.create_user(
+            username="shop-topup",
+            password="shopTopupPass1",
+            name="Shop Topup",
+            contact_email="shop-topup@example.com",
+            contact_phone="+251900000202",
+            role=ShopUser.Role.SHOP,
+        )
+        shop.status = ShopUser.Status.ACTIVE
+        shop.save()
+
+        self.client.force_authenticate(user=manager)
+        mail.outbox.clear()
+
+        resp = self.client.post(
+            reverse("admin-shop-fill-balance", kwargs={"user_id": shop.id}),
+            {"amount": "250", "reference": "test-topup-1"},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertGreaterEqual(len(mail.outbox), 1)
+        self.assertIn("Reserve top-up received", mail.outbox[0].subject)
+        self.assertIn("shop-topup@example.com", mail.outbox[0].to)

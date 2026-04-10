@@ -53,6 +53,7 @@ def send_branded_email(
     message: str,
     cta_text: str | None = None,
     cta_url: str | None = None,
+    banner_text: str | None = None,
 ) -> bool:
     if not to_email:
         return False
@@ -63,6 +64,7 @@ def send_branded_email(
     from_email = _resolve_from_email()
     brand_name = getattr(settings, "BRAND_NAME", "LULU Bingo")
     brand_logo_url = getattr(settings, "BRAND_LOGO_URL", "")
+    banner_label = (banner_text or "Security Notification").strip() or "Security Notification"
     safe_heading = escape(heading)
     safe_message = escape(message).replace("\n", "<br>")
 
@@ -88,7 +90,7 @@ def send_branded_email(
         <div style=\"background:linear-gradient(135deg,#b91c1c,#7f1d1d);padding:20px 24px;color:#fff;\">
           {logo_html}
           <div style=\"font-size:22px;font-weight:800;letter-spacing:0.3px;\">{escape(brand_name)}</div>
-          <div style=\"font-size:13px;opacity:0.9;margin-top:4px;\">Security Notification</div>
+              <div style=\"font-size:13px;opacity:0.9;margin-top:4px;\">{escape(banner_label)}</div>
         </div>
         <div style=\"padding:24px;\">
           <h2 style=\"margin:0 0 12px;color:#0f172a;font-size:20px;\">{safe_heading}</h2>
@@ -96,7 +98,7 @@ def send_branded_email(
           {cta_html}
           <hr style=\"border:none;border-top:1px solid #e2e8f0;margin:20px 0 16px;\" />
           <p style=\"margin:0;color:#475569;font-size:12px;line-height:1.6;\">
-            Sent by {escape(brand_name)} Security - From: {escape(from_email)}
+            Sent by {escape(brand_name)} - From: {escape(from_email)}
           </p>
           <p style=\"margin:24px 0 0;color:#64748b;font-size:12px;line-height:1.5;\">
             This mailbox is not monitored. Please do not reply to this email.

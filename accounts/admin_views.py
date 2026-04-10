@@ -1,3 +1,7 @@
+import logging
+from decimal import Decimal
+
+from django.conf import settings
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -19,8 +23,12 @@ from .admin_serializers import (
     ManagerCreateSerializer,
     ManagerUpdateSerializer,
 )
+from .emailing import send_branded_email
 from .models import ShopUser
 from .serializers import ShopUserSerializer
+
+
+logger = logging.getLogger(__name__)
 
 
 class IsManagerPermission(permissions.BasePermission):
@@ -48,6 +56,61 @@ def _parse_limit(request, default: int = 200, max_value: int = 1000) -> int:
     except ValueError:
         return default
     return max(1, min(parsed, max_value))
+
+
+def _format_money(value) -> str:
+    try:
+        amount = Decimal(str(value))
+    except Exception:
+        return f"{value} ETB"
+    return f"{amount:,.2f} ETB"
+
+
+def _humanize_field(field_name: str) -> str:
+    label = field_name.replace("_", " ").strip()
+    if not label:
+        return field_name
+    return label.capitalize()
+
+
+def _app_base_url() -> str:
+    return (getattr(settings, "APP_BASE_URL", "http://localhost:5173") or "http://localhost:5173").rstrip("/")
+
+
+def _send_operation_email(
+    user: ShopUser,
+    *,
+    subject: str,
+    heading: str,
+    message: str,
+    cta_text: str | None = None,
+    cta_url: str | None = None,
+    banner_text: str = "Operations Update",
+) -> bool:
+    if not user.contact_email:
+        return False
+
+    try:
+        sent = send_branded_email(
+            to_email=user.contact_email,
+            subject=subject,
+            heading=heading,
+            message=message,
+            cta_text=cta_text,
+            cta_url=cta_url,
+            banner_text=banner_text,
+        )
+        if not sent:
+            logger.warning("Email was not delivered for user_id=%s subject=%s", user.id, subject)
+        return sent
+    except Exception as exc:
+        logger.warning(
+            "Failed to send operation email for user_id=%s subject=%s: %s",
+            user.id,
+            subject,
+            exc,
+        )
+        return False
 
 
 class AdminManagerListCreateView(APIView):
@@ -85,6 +148,31 @@ class AdminManagerListCreateView(APIView):
         serializer = ManagerCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         manager = serializer.save()
+
+        provisioned_by = getattr(request.user, "name", "") or request.user.username
+        message_lines = [
+            "Welcome to Lulu Bingo administration.",
+            "",
+            "Your manager account is now active.",
+            f"Username: {manager.username}",
+            f"Status: {manager.get_status_display()}",
+            f"Provisioned by: {provisioned_by}",
+            "",
+            "Use the password shared with you by your administrator.",
+        ]
+        if manager.must_change_password:
+            message_lines.append("A password change is required on your next login.")
+
+        _send_operation_email(
+            manager,
+            subject="Welcome to Lulu Bingo Admin",
+            heading="Your manager account is ready",
+            message="\n".join(message_lines),
+            cta_text="Open Lulu Bingo",
+            cta_url=_app_base_url(),
+            banner_text="Welcome",
+        )
+
         return Response(ShopUserSerializer(manager).data, status=status.HTTP_201_CREATED)
 
 
@@ -108,7 +196,37 @@ class AdminManagerDetailView(APIView):
         manager = self._get_manager(user_id)
         serializer = ManagerUpdateSerializer(instance=manager, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        changed_fields = list(serializer.validated_data.keys())
+        password_changed = "password" in changed_fields
         manager = serializer.save()
+
+        readable_changes = [
+            _humanize_field(field_name)
+            for field_name in changed_fields
+            if field_name != "password"
+        ]
+
+        message_lines = [
+            "Your manager account settings were updated by Lulu Bingo administration.",
+            f"Current status: {manager.get_status_display()}",
+        ]
+        if readable_changes:
+            message_lines.append(f"Updated fields: {', '.join(readable_changes)}")
+        if password_changed:
+            message_lines.append("Your password was reset by an administrator.")
+        if "must_change_password" in changed_fields and manager.must_change_password:
+            message_lines.append("You must change your password on your next login.")
+
+        _send_operation_email(
+            manager,
+            subject="Manager account updated",
+            heading="Your manager settings changed",
+            message="\n".join(message_lines),
+            cta_text="Review account",
+            cta_url=_app_base_url(),
+            banner_text="Account Update",
+        )
+
         return Response(ShopUserSerializer(manager).data)
 
     @extend_schema(
@@ -137,6 +255,19 @@ class AdminManagerDetailView(APIView):
                 {"detail": "At least one active manager must remain."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        _send_operation_email(
+            manager,
+            subject="Manager access removed",
+            heading="Your manager access has been removed",
+            message=(
+                "Your manager account was removed by Lulu Bingo administration.\n"
+                "If you believe this was done in error, contact support immediately."
+            ),
+            cta_text="Contact support",
+            cta_url=_app_base_url(),
+            banner_text="Access Update",
+        )
 
         manager.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -184,8 +315,39 @@ class AdminShopListCreateView(APIView):
     def post(self, request):
         serializer = AdminShopCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+        requested_data = dict(serializer.validated_data)
         shop = serializer.save()
         initial_tx = getattr(shop, "_initial_funding_tx", None)
+
+        provisioned_by = getattr(request.user, "name", "") or request.user.username
+        opening_balance = requested_data.get("initial_balance", shop.wallet_balance)
+        message_lines = [
+            "Welcome to Lulu Bingo.",
+            "",
+            "Your shop account was created successfully.",
+            f"Shop name: {shop.name}",
+            f"Username: {shop.username}",
+            f"Shop ID: {shop.human_shop_id}",
+            f"Shop code: {shop.shop_code}",
+            f"Opening reserve balance: {_format_money(opening_balance)}",
+            f"Shop cut percentage: {shop.shop_cut_percentage}%",
+            f"Lulu cut percentage: {shop.lulu_cut_percentage}%",
+            f"Provisioned by: {provisioned_by}",
+            "",
+            "Use the password provided by your manager and keep it private.",
+        ]
+        if shop.must_change_password:
+            message_lines.append("You must change your password on first login.")
+
+        _send_operation_email(
+            shop,
+            subject="Welcome to Lulu Bingo",
+            heading="Your shop account is ready",
+            message="\n".join(message_lines),
+            cta_text="Open Lulu Bingo",
+            cta_url=_app_base_url(),
+            banner_text="Welcome",
+        )
 
         payload = {"shop": ShopUserSerializer(shop).data}
         if initial_tx is not None:
@@ -214,7 +376,37 @@ class AdminShopDetailView(APIView):
         shop = self._get_shop(user_id)
         serializer = AdminShopUpdateSerializer(instance=shop, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        changed_fields = list(serializer.validated_data.keys())
+        password_changed = "password" in changed_fields
         shop = serializer.save()
+
+        readable_changes = [
+            _humanize_field(field_name)
+            for field_name in changed_fields
+            if field_name != "password"
+        ]
+
+        message_lines = [
+            "Your shop account settings were updated by Lulu Bingo administration.",
+            f"Current status: {shop.get_status_display()}",
+        ]
+        if readable_changes:
+            message_lines.append(f"Updated fields: {', '.join(readable_changes)}")
+        if password_changed:
+            message_lines.append("Your password was reset by an administrator.")
+        if "must_change_password" in changed_fields and shop.must_change_password:
+            message_lines.append("You must change your password on next login.")
+
+        _send_operation_email(
+            shop,
+            subject="Shop account updated",
+            heading="Your shop settings changed",
+            message="\n".join(message_lines),
+            cta_text="Review account",
+            cta_url=_app_base_url(),
+            banner_text="Account Update",
+        )
+
         return Response(ShopUserSerializer(shop).data)
 
     @extend_schema(
@@ -224,6 +416,20 @@ class AdminShopDetailView(APIView):
     )
     def delete(self, request, user_id: int):
         shop = self._get_shop(user_id)
+
+        _send_operation_email(
+            shop,
+            subject="Shop account removed",
+            heading="Your shop account has been removed",
+            message=(
+                "Your Lulu Bingo shop account was removed by administration.\n"
+                "If this was unexpected, contact support immediately."
+            ),
+            cta_text="Contact support",
+            cta_url=_app_base_url(),
+            banner_text="Access Update",
+        )
+
         shop.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -268,6 +474,22 @@ class AdminShopBalanceTopUpView(APIView):
         )
 
         shop.refresh_from_db(fields=["wallet_balance"])
+
+        _send_operation_email(
+            shop,
+            subject="Reserve top-up received",
+            heading="Your shop reserve balance was topped up",
+            message=(
+                "A reserve top-up was applied to your shop account.\n"
+                f"Credited amount: {_format_money(amount)}\n"
+                f"Reference: {reference}\n"
+                f"Updated reserve balance: {_format_money(shop.wallet_balance)}"
+            ),
+            cta_text="View account",
+            cta_url=_app_base_url(),
+            banner_text="Balance Update",
+        )
+
         return Response(
             {
                 "shop": ShopUserSerializer(shop).data,
