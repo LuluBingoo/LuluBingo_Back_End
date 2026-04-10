@@ -211,6 +211,16 @@ class AdminShopUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class AdminShopBalanceTopUpSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    reference = serializers.CharField(max_length=120, required=False, allow_blank=True)
+
+    def validate_amount(self, value: Decimal) -> Decimal:
+        if value <= Decimal("0"):
+            raise serializers.ValidationError("Amount must be greater than 0.")
+        return value
+
+
 class AdminGameListSerializer(serializers.ModelSerializer):
     shop_id = serializers.IntegerField(source="shop.id", read_only=True)
     shop_username = serializers.CharField(source="shop.username", read_only=True)

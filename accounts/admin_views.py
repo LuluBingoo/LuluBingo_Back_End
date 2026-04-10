@@ -8,9 +8,11 @@ from rest_framework.views import APIView
 from games.models import Game
 from transactions.models import Transaction
 from transactions.serializers import TransactionSerializer
+from transactions.services import apply_transaction
 
 from .admin_serializers import (
     AdminGameListSerializer,
+    AdminShopBalanceTopUpSerializer,
     AdminShopCreateSerializer,
     AdminShopUpdateSerializer,
     AdminTransactionListSerializer,
@@ -224,6 +226,55 @@ class AdminShopDetailView(APIView):
         shop = self._get_shop(user_id)
         shop.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AdminShopBalanceTopUpView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsManagerPermission]
+
+    def _get_shop(self, user_id: int) -> ShopUser:
+        return get_object_or_404(ShopUser, pk=user_id, role=ShopUser.Role.SHOP)
+
+    @extend_schema(
+        request=AdminShopBalanceTopUpSerializer,
+        responses={
+            201: OpenApiResponse(description="Shop balance topped up"),
+            404: OpenApiResponse(description="Shop not found"),
+        },
+        tags=["Admin"],
+    )
+    def post(self, request, user_id: int):
+        shop = self._get_shop(user_id)
+        serializer = AdminShopBalanceTopUpSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        amount = serializer.validated_data["amount"]
+        reference = serializer.validated_data.get("reference") or f"shop:{shop.shop_code}:admin_topup"
+
+        tx = apply_transaction(
+            user=shop,
+            amount=amount,
+            tx_type=Transaction.Type.DEPOSIT,
+            reference=reference,
+            metadata={
+                "event": "shop_balance_topup",
+                "shop_id": shop.id,
+                "shop_code": shop.shop_code,
+                "shop_username": shop.username,
+                "topup_by_user_id": request.user.id,
+                "topup_by_username": request.user.username,
+            },
+            actor_role=Transaction.ActorRole.ADMIN,
+            operation_source=Transaction.OperationSource.ADMIN,
+        )
+
+        shop.refresh_from_db(fields=["wallet_balance"])
+        return Response(
+            {
+                "shop": ShopUserSerializer(shop).data,
+                "transaction": TransactionSerializer(tx).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class AdminGameListView(APIView):
