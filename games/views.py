@@ -308,8 +308,6 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
             awarded_claims=[],
             winning_pattern="",
         )
-        game.bet_debited_at = timezone.now()
-        game.save(update_fields=["bet_debited_at"])
 
         session.status = ShopBingoSession.Status.LOCKED
         session.game = game
@@ -778,27 +776,6 @@ class GameClaimView(APIView):
                 )
 
             total_pool, payout_amount, shop_cut, lulu_cut, shop_net_cut = _resolve_game_financials(game)
-
-            if shop_cut > 0:
-                apply_transaction(
-                    user=game.shop,
-                    amount=shop_cut,
-                    tx_type=Transaction.Type.BET_CREDIT,
-                    reference=f"game:{game.game_code}:shop_cut_gross",
-                    metadata={
-                        "event": "bingo_shop_cut_gross_credit",
-                        "game_id": game.game_code,
-                        "total_pool": str(total_pool),
-                        "shop_cut_percentage": str(game.cut_percentage),
-                        "lulu_cut_percentage": str(game.lulu_cut_percentage),
-                        "payout_amount": str(payout_amount),
-                        "shop_cut": str(shop_cut),
-                        "lulu_cut": str(lulu_cut),
-                        "shop_net_cut": str(shop_net_cut),
-                        "winner_cartella_index": cartella_index,
-                        "pattern": selected_pattern,
-                    },
-                )
 
             if lulu_cut > 0:
                 apply_transaction(

@@ -9,7 +9,41 @@ from rest_framework import serializers
 from accounts.models import ShopUser
 from .models import Game, ShopBingoSession
 from transactions.models import Transaction
-from transactions.services import TransactionError, apply_transaction
+from transactions.services import apply_transaction
+
+
+def _resolve_game_financials(game: Game) -> tuple[Decimal, Decimal, Decimal, Decimal, Decimal]:
+    total_pool = (
+        game.total_pool
+        if game.total_pool and game.total_pool > 0
+        else game.bet_amount * Decimal(len(game.cartella_numbers))
+    )
+
+    cut_percentage = Decimal(str(game.cut_percentage if game.cut_percentage is not None else Decimal("10")))
+    cut_percentage = max(Decimal("0"), min(Decimal("100"), cut_percentage))
+
+    lulu_cut_percentage = Decimal(
+        str(
+            game.lulu_cut_percentage
+            if game.lulu_cut_percentage is not None
+            else getattr(game.shop, "lulu_cut_percentage", Decimal("15"))
+        )
+    )
+    lulu_cut_percentage = max(Decimal("0"), min(Decimal("100"), lulu_cut_percentage))
+
+    shop_cut = (total_pool * cut_percentage / Decimal("100")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    lulu_cut = (shop_cut * lulu_cut_percentage / Decimal("100")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    shop_net_cut = (shop_cut - lulu_cut).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    payout_amount = (total_pool - shop_cut).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    return total_pool, payout_amount, shop_cut, lulu_cut, shop_net_cut
 
 
 class GameSerializer(serializers.ModelSerializer):
@@ -130,40 +164,21 @@ class GameCreateSerializer(serializers.ModelSerializer):
 
         win_percentage = Decimal("100") - cut_percentage
 
-        try:
-            with db_transaction.atomic():
-                game = Game.objects.create(
-                    shop=user,
-                    bet_amount=validated_data["bet_amount"],
-                    num_players=validated_data["num_players"],
-                    win_amount=validated_data["win_amount"],
-                    total_pool=total_bet,
-                    cut_percentage=cut_percentage,
-                    lulu_cut_percentage=lulu_cut_percentage,
-                    win_percentage=win_percentage,
-                    cartella_numbers=cartellas,
-                    cartella_statuses={str(index): "active" for index in range(len(cartellas))},
-                    status=Game.Status.ACTIVE,
-                    started_at=timezone.now(),
-                )
-                apply_transaction(
-                    user=user,
-                    amount=total_bet,
-                    tx_type=Transaction.Type.BET_DEBIT,
-                    reference=f"game:{game.game_code}:bet",
-                    metadata={
-                        "event": "game_bet_debit",
-                        "game_code": game.game_code,
-                        "cartella_count": len(cartellas),
-                        "bet_per_cartella": str(validated_data["bet_amount"]),
-                        "estimated_shop_cut": str(estimated_shop_cut),
-                        "estimated_lulu_cut": str(estimated_lulu_cut),
-                    },
-                )
-                game.bet_debited_at = timezone.now()
-                game.save(update_fields=["bet_debited_at"])
-        except TransactionError as exc:
-            raise serializers.ValidationError({"bet_amount": str(exc)}) from exc
+        with db_transaction.atomic():
+            game = Game.objects.create(
+                shop=user,
+                bet_amount=validated_data["bet_amount"],
+                num_players=validated_data["num_players"],
+                win_amount=validated_data["win_amount"],
+                total_pool=total_bet,
+                cut_percentage=cut_percentage,
+                lulu_cut_percentage=lulu_cut_percentage,
+                win_percentage=win_percentage,
+                cartella_numbers=cartellas,
+                cartella_statuses={str(index): "active" for index in range(len(cartellas))},
+                status=Game.Status.ACTIVE,
+                started_at=timezone.now(),
+            )
 
         return game
 
@@ -197,41 +212,34 @@ class GameCompleteSerializer(serializers.ModelSerializer):
     def update(self, instance: Game, validated_data):
         status_value = validated_data.get("status", instance.status)
         winners = validated_data.get("winners", [])
-        cartella_count = len(instance.cartella_numbers)
-        total_bet = instance.bet_amount * cartella_count
 
         with db_transaction.atomic():
             if status_value == Game.Status.COMPLETED and instance.payout_credited_at is None:
-                payout_amount = instance.win_amount * len(winners)
-                if payout_amount > 0:
+                total_pool, payout_amount, shop_cut, lulu_cut, shop_net_cut = _resolve_game_financials(instance)
+
+                if lulu_cut > 0:
                     apply_transaction(
                         user=instance.shop,
-                        amount=payout_amount,
-                        tx_type=Transaction.Type.BET_CREDIT,
-                        reference=f"game:{instance.game_code}:payout",
+                        amount=lulu_cut,
+                        tx_type=Transaction.Type.LULU_CUT_DEBIT,
+                        reference=f"game:{instance.game_code}:lulu_cut",
                         metadata={
-                            "event": "game_payout_credit",
+                            "event": "game_lulu_cut_debit",
                             "game_code": instance.game_code,
+                            "total_pool": str(total_pool),
+                            "shop_cut": str(shop_cut),
+                            "lulu_cut": str(lulu_cut),
+                            "shop_net_cut": str(shop_net_cut),
                             "winners": winners,
-                            "win_amount_per_winner": str(instance.win_amount),
                         },
                     )
-                instance.payout_credited_at = timezone.now()
 
-            if status_value == Game.Status.CANCELLED and instance.refund_credited_at is None and instance.bet_debited_at:
-                apply_transaction(
-                    user=instance.shop,
-                    amount=total_bet,
-                    tx_type=Transaction.Type.BET_CREDIT,
-                    reference=f"game:{instance.game_code}:refund",
-                    metadata={
-                        "event": "game_refund_credit",
-                        "game_code": instance.game_code,
-                        "cartella_count": cartella_count,
-                        "bet_per_cartella": str(instance.bet_amount),
-                    },
-                )
-                instance.refund_credited_at = timezone.now()
+                instance.total_pool = total_pool
+                instance.payout_amount = payout_amount
+                instance.shop_cut_amount = shop_cut
+                instance.lulu_cut_amount = lulu_cut
+                instance.shop_net_cut_amount = shop_net_cut
+                instance.payout_credited_at = timezone.now()
 
             instance.status = status_value
             instance.winners = winners
@@ -241,6 +249,11 @@ class GameCompleteSerializer(serializers.ModelSerializer):
                     "status",
                     "winners",
                     "ended_at",
+                    "total_pool",
+                    "payout_amount",
+                    "shop_cut_amount",
+                    "lulu_cut_amount",
+                    "shop_net_cut_amount",
                     "payout_credited_at",
                     "refund_credited_at",
                 ]

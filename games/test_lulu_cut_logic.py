@@ -80,9 +80,9 @@ class LuluCutGameFlowTests(APITestCase):
         self.assertEqual(game.shop_net_cut_amount, Decimal("1.00"))
 
         self.shop.refresh_from_db()
-        self.assertEqual(self.shop.wallet_balance, Decimal("491.00"))
+        self.assertEqual(self.shop.wallet_balance, Decimal("499.00"))
 
         tx_types = list(Transaction.objects.filter(user=self.shop).values_list("tx_type", flat=True))
-        self.assertIn(Transaction.Type.BET_DEBIT, tx_types)
-        self.assertIn(Transaction.Type.BET_CREDIT, tx_types)
         self.assertIn(Transaction.Type.LULU_CUT_DEBIT, tx_types)
+        self.assertNotIn(Transaction.Type.BET_DEBIT, tx_types)
+        self.assertNotIn(Transaction.Type.BET_CREDIT, tx_types)

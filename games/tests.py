@@ -42,10 +42,12 @@ class GameTests(APITestCase):
         self.assertEqual(len(resp.data["draw_sequence"]), 75)
         self.assertEqual(resp.data["status"], Game.Status.ACTIVE)
         self.shop.refresh_from_db()
-        self.assertEqual(float(self.shop.wallet_balance), 470.00)
+        self.assertEqual(float(self.shop.wallet_balance), 500.00)
 
     def test_create_game_requires_sufficient_wallet_balance(self):
         headers = self.auth_headers()
+        self.shop.wallet_balance = "0.10"
+        self.shop.save(update_fields=["wallet_balance"])
         payload = {
             "bet_amount": "250.00",
             "num_players": 1,
@@ -99,7 +101,7 @@ class GameTests(APITestCase):
         self.assertEqual(complete_resp.data["status"], "completed")
         self.assertEqual(complete_resp.data["winners"], [0])
         self.shop.refresh_from_db()
-        self.assertEqual(float(self.shop.wallet_balance), 540.00)
+        self.assertEqual(float(self.shop.wallet_balance), 499.85)
 
     def test_cancel_game_refunds_bet(self):
         headers = self.auth_headers()
@@ -333,8 +335,9 @@ class GameTests(APITestCase):
         self.client.post(reverse("game-complete", args=[code]), {"status": "completed", "winners": [0]}, format="json", **headers)
 
         tx_types = list(Transaction.objects.filter(user=self.shop).values_list("tx_type", flat=True))
-        self.assertIn(Transaction.Type.BET_DEBIT, tx_types)
-        self.assertIn(Transaction.Type.BET_CREDIT, tx_types)
+        self.assertIn(Transaction.Type.LULU_CUT_DEBIT, tx_types)
+        self.assertNotIn(Transaction.Type.BET_DEBIT, tx_types)
+        self.assertNotIn(Transaction.Type.BET_CREDIT, tx_types)
 
     def test_shop_mode_prevents_duplicate_cartella(self):
         headers = self.auth_headers()
