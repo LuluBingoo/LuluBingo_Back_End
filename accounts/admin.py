@@ -42,7 +42,13 @@ class ShopUserAdmin(UserAdmin):
     search_fields = ("username", "name", "contact_phone", "contact_email")
     ordering = ("username",)
     readonly_fields = ("created_at", "shop_code", "totp_secret")
-    actions = ["activate_users", "suspend_users", "mark_profiles_complete", "reset_two_factor"]
+    actions = [
+        "activate_users",
+        "suspend_users",
+        "mark_profiles_complete",
+        "reset_two_factor",
+        "promote_to_manager",
+    ]
     fieldsets = (
         (None, {
             "fields": (
@@ -86,11 +92,14 @@ class ShopUserAdmin(UserAdmin):
             "fields": (
                 "username",
                 "name",
+                "contact_phone",
+                "contact_email",
                 "password1",
                 "password2",
                 "role",
                 "status",
                 "must_change_password",
+                "two_factor_method",
                 "is_staff",
                 "is_superuser",
             ),
@@ -138,6 +147,21 @@ class ShopUserAdmin(UserAdmin):
         self.message_user(request, f"Reset 2FA for {updated} shop(s).")
 
     reset_two_factor.short_description = "Disable 2FA and clear secret"
+
+    def promote_to_manager(self, request, queryset):
+        updated = 0
+        for user in queryset:
+            if user.role == ShopUser.Role.MANAGER and user.is_staff:
+                continue
+            user.role = ShopUser.Role.MANAGER
+            user.is_staff = True
+            if user.status == ShopUser.Status.PENDING:
+                user.status = ShopUser.Status.ACTIVE
+            user.save(update_fields=["role", "is_staff", "status"])
+            updated += 1
+        self.message_user(request, f"Promoted {updated} user(s) to manager.")
+
+    promote_to_manager.short_description = "Promote selected users to manager"
 
 
 @admin.register(LoginAttempt)
