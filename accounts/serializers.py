@@ -56,6 +56,35 @@ class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
     otp = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    resend_otp = serializers.BooleanField(required=False, default=False)
+
+    @staticmethod
+    def _mask_email(email: str) -> str:
+        safe = (email or "").strip()
+        if "@" not in safe:
+            return safe
+
+        local, domain = safe.split("@", 1)
+        if not local:
+            return f"****@{domain}"
+        if len(local) == 1:
+            return f"{local}****@{domain}"
+        return f"{local[0]}****{local[-1]}@{domain}"
+
+    @staticmethod
+    def _send_login_email_code(user) -> bool:
+        code = user.generate_email_2fa_code()
+        user.save(update_fields=["two_factor_email_code", "two_factor_email_code_expires_at"])
+        return send_branded_email(
+            to_email=user.contact_email,
+            subject="Your Lulu Bingo login verification code",
+            heading="Login verification code",
+            message=(
+                f"Your login verification code is {code}. "
+                "It expires in 10 minutes."
+            ),
+            banner_text="Login Verification",
+        )
 
     def validate(self, attrs):
         username = attrs.get("username")
@@ -81,15 +110,66 @@ class LoginSerializer(serializers.Serializer):
             if not enabled_methods:
                 fallback_method = getattr(user, "two_factor_method", "totp") or "totp"
                 enabled_methods = [fallback_method]
-            otp = attrs.get("otp")
+            otp = (attrs.get("otp") or "").strip()
+            resend_otp = attrs.get("resend_otp", False)
+            preferred_method = (
+                user.two_factor_method
+                if user.two_factor_method in enabled_methods
+                else enabled_methods[0]
+            )
+            can_send_email_code = "email_code" in enabled_methods and bool(user.contact_email)
+
+            if resend_otp:
+                if not can_send_email_code:
+                    raise serializers.ValidationError(
+                        {
+                            "otp": "Email OTP is not available for this account.",
+                            "two_factor_method": preferred_method,
+                            "two_factor_methods": enabled_methods,
+                        }
+                    )
+
+                if not self._send_login_email_code(user):
+                    raise serializers.ValidationError(
+                        {
+                            "otp": "Could not send OTP email. Verify SMTP/email settings and try again.",
+                            "two_factor_method": "email_code",
+                            "two_factor_methods": enabled_methods,
+                        }
+                    )
+
+                raise serializers.ValidationError(
+                    {
+                        "otp": "OTP is required for login.",
+                        "detail": "A new verification code has been sent to your email.",
+                        "two_factor_method": "email_code",
+                        "two_factor_methods": enabled_methods,
+                        "email_hint": self._mask_email(user.contact_email),
+                    }
+                )
 
             if not otp:
-                sent_email_code = False
-                if "email_code" in enabled_methods and user.contact_email:
-                    # Logic for sending OTP via email (if applicable)
-                    pass
+                error_payload = {
+                    "otp": "OTP is required for login.",
+                    "two_factor_method": preferred_method,
+                    "two_factor_methods": enabled_methods,
+                }
 
-                raise serializers.ValidationError("OTP is required for login. Please provide the OTP sent to your registered method.")
+                if can_send_email_code:
+                    sent = self._send_login_email_code(user)
+                    if sent:
+                        error_payload["detail"] = (
+                            "Verification code sent to your email."
+                        )
+                        error_payload["email_hint"] = self._mask_email(
+                            user.contact_email
+                        )
+                    else:
+                        error_payload["detail"] = (
+                            "Could not send OTP email. Verify SMTP/email settings and try again."
+                        )
+
+                raise serializers.ValidationError(error_payload)
 
             otp_valid = False
 
@@ -109,8 +189,13 @@ class LoginSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     {
                         "otp": "Invalid or expired OTP",
-                        "two_factor_method": enabled_methods[0],
+                        "two_factor_method": preferred_method,
                         "two_factor_methods": enabled_methods,
+                        **(
+                            {"email_hint": self._mask_email(user.contact_email)}
+                            if can_send_email_code
+                            else {}
+                        ),
                     }
                 )
 

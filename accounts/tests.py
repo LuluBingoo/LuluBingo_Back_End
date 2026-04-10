@@ -190,7 +190,16 @@ class AuthTests(APITestCase):
     def test_login_requires_otp_when_2fa_enabled(self):
         self.user.two_factor_enabled = True
         self.user.ensure_totp_secret()
-        self.user.save(update_fields=["two_factor_enabled", "totp_secret"])
+        self.user.two_factor_totp_enabled = True
+        self.user.two_factor_method = "totp"
+        self.user.save(
+            update_fields=[
+                "two_factor_enabled",
+                "two_factor_totp_enabled",
+                "two_factor_method",
+                "totp_secret",
+            ]
+        )
 
         url = reverse("login")
         resp = self.client.post(url, {"username": "shop1", "password": "pass1234"}, format="json")
@@ -204,6 +213,56 @@ class AuthTests(APITestCase):
             format="json",
         )
         self.assertEqual(resp_ok.status_code, status.HTTP_200_OK)
+
+    def test_login_with_email_2fa_sends_masked_hint_and_resend(self):
+        self.user.two_factor_enabled = True
+        self.user.two_factor_email_enabled = True
+        self.user.two_factor_totp_enabled = False
+        self.user.two_factor_method = "email_code"
+        self.user.save(
+            update_fields=[
+                "two_factor_enabled",
+                "two_factor_email_enabled",
+                "two_factor_totp_enabled",
+                "two_factor_method",
+            ]
+        )
+
+        url = reverse("login")
+        mail.outbox.clear()
+
+        resp = self.client.post(
+            url,
+            {"username": "shop1", "password": "pass1234"},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.data.get("two_factor_method", [""])[0], "email_code")
+        self.assertEqual(resp.data.get("email_hint", [""])[0], "s****1@example.com")
+        self.assertGreaterEqual(len(mail.outbox), 1)
+
+        self.user.refresh_from_db()
+        sent_code = self.user.two_factor_email_code
+        self.assertTrue(sent_code)
+
+        resp_ok = self.client.post(
+            url,
+            {"username": "shop1", "password": "pass1234", "otp": sent_code},
+            format="json",
+        )
+        self.assertEqual(resp_ok.status_code, status.HTTP_200_OK)
+
+        resp_resend = self.client.post(
+            url,
+            {"username": "shop1", "password": "pass1234", "resend_otp": True},
+            format="json",
+        )
+        self.assertEqual(resp_resend.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp_resend.data.get("two_factor_method", [""])[0], "email_code")
+        self.assertIn(
+            "new verification code",
+            str(resp_resend.data.get("detail", [""])[0]).lower(),
+        )
 
     def test_2fa_setup_enable_disable_flow(self):
         login_resp = self.client.post(reverse("login"), {"username": "shop1", "password": "pass1234"}, format="json")
