@@ -49,12 +49,12 @@ def _record_attempt(username: str, success: bool, request, user=None):
     )
 
 
-def _send_security_email(user, subject: str, message: str):
+def _send_security_email(user, subject: str, message: str) -> bool:
     # Skip when email is missing to avoid noisy failures.
     if not user or not user.contact_email:
-        return
+        return False
 
-    send_branded_email(
+    return send_branded_email(
         to_email=user.contact_email,
         subject=subject,
         heading=subject,
@@ -418,11 +418,20 @@ class TwoFactorEmailCodeView(APIView):
         code = user.generate_email_2fa_code()
         user.save(update_fields=["two_factor_email_code", "two_factor_email_code_expires_at"])
 
-        _send_security_email(
+        sent = _send_security_email(
             user,
             "Your Lulu Bingo verification code",
             f"Your verification code is: {code}. It expires in 10 minutes. Purpose: {purpose}.",
         )
+
+        if not sent:
+            return Response(
+                {
+                    "detail": "Could not send OTP email. Verify SMTP/email settings and try again.",
+                    "purpose": purpose,
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         return Response({"detail": "Verification code sent to your email.", "purpose": purpose})
 

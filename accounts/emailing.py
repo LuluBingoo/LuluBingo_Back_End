@@ -18,16 +18,32 @@ def _should_raise_email_errors() -> bool:
 
 
 def _should_send_async() -> bool:
-  return bool(getattr(settings, "EMAIL_SEND_ASYNC", True))
+  return bool(getattr(settings, "EMAIL_SEND_ASYNC", False))
 
 
-def _deliver_email(email: EmailMultiAlternatives, to_email: str) -> None:
+def _should_fail_silently() -> bool:
+  return bool(getattr(settings, "EMAIL_FAIL_SILENTLY", False))
+
+
+def _deliver_email(
+    email: EmailMultiAlternatives,
+    to_email: str,
+    *,
+    raise_errors: bool,
+) -> bool:
     try:
-        email.send(fail_silently=True)
+        sent_count = email.send(fail_silently=_should_fail_silently())
+        if sent_count <= 0:
+            logger.warning("Email backend reported 0 delivered messages for %s", to_email)
+            if raise_errors:
+                raise RuntimeError("Email backend did not confirm delivery.")
+            return False
+        return True
     except Exception as exc:
         logger.warning("Email delivery skipped for %s: %s", to_email, exc)
-        if _should_raise_email_errors():
+        if raise_errors:
             raise
+        return False
 
 
 def send_branded_email(
@@ -37,9 +53,12 @@ def send_branded_email(
     message: str,
     cta_text: str | None = None,
     cta_url: str | None = None,
-) -> None:
+) -> bool:
     if not to_email:
-        return
+    return False
+
+  raise_errors = _should_raise_email_errors()
+  send_async = _should_send_async() and not raise_errors
 
     from_email = _resolve_from_email()
     brand_name = getattr(settings, "BRAND_NAME", "LULU Bingo")
@@ -97,14 +116,15 @@ def send_branded_email(
     )
     email.attach_alternative(html_body, "text/html")
 
-    if _should_send_async():
+    if send_async:
       worker = threading.Thread(
         target=_deliver_email,
         args=(email, to_email),
+        kwargs={"raise_errors": False},
         daemon=True,
         name="lulubingo-email",
       )
       worker.start()
-      return
+      return True
 
-    _deliver_email(email, to_email)
+    return _deliver_email(email, to_email, raise_errors=raise_errors)

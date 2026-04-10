@@ -258,6 +258,8 @@ EMAIL_USE_SSL = str_to_bool(get_env("EMAIL_USE_SSL"), False)
 
 EMAIL_TIMEOUT = int(get_env("EMAIL_TIMEOUT", "10") or "10")
 EMAIL_FAIL_SILENTLY = str_to_bool(get_env("EMAIL_FAIL_SILENTLY"), True)
+EMAIL_RAISE_EXCEPTIONS = str_to_bool(get_env("EMAIL_RAISE_EXCEPTIONS"), False)
+EMAIL_SEND_ASYNC = str_to_bool(get_env("EMAIL_SEND_ASYNC"), False)
 
 EMAIL_BACKEND = get_env(
     "EMAIL_BACKEND",
