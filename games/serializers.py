@@ -1,5 +1,5 @@
 import random
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from typing import List
 
 from django.db import transaction as db_transaction
@@ -41,9 +41,12 @@ class GameSerializer(serializers.ModelSerializer):
             "awarded_claims",
             "total_pool",
             "cut_percentage",
+            "lulu_cut_percentage",
             "win_percentage",
             "payout_amount",
             "shop_cut_amount",
+            "lulu_cut_amount",
+            "shop_net_cut_amount",
             "winning_pattern",
             "created_at",
             "started_at",
@@ -92,14 +95,39 @@ class GameCreateSerializer(serializers.ModelSerializer):
         user: ShopUser = self.context["user"]
         cartellas = validated_data["cartella_numbers"]
         total_bet = validated_data["bet_amount"] * len(cartellas)
-        feature_flags = user.feature_flags if isinstance(user.feature_flags, dict) else {}
 
-        cut_percentage_raw = feature_flags.get("cut_percentage", 10)
+        cut_percentage_raw = getattr(user, "shop_cut_percentage", Decimal("10"))
+        lulu_cut_percentage_raw = getattr(user, "lulu_cut_percentage", Decimal("15"))
         try:
             cut_percentage = Decimal(str(cut_percentage_raw))
         except Exception:
             cut_percentage = Decimal("10")
+        try:
+            lulu_cut_percentage = Decimal(str(lulu_cut_percentage_raw))
+        except Exception:
+            lulu_cut_percentage = Decimal("15")
+
         cut_percentage = max(Decimal("0"), min(Decimal("100"), cut_percentage))
+        lulu_cut_percentage = max(Decimal("0"), min(Decimal("100"), lulu_cut_percentage))
+
+        estimated_shop_cut = (total_bet * cut_percentage / Decimal("100")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        estimated_lulu_cut = (estimated_shop_cut * lulu_cut_percentage / Decimal("100")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+
+        if Decimal(str(user.wallet_balance)) < estimated_lulu_cut:
+            raise serializers.ValidationError(
+                {
+                    "detail": "Insufficient balance to cover Lulu cut for this game.",
+                    "error_code": "insufficient_lulu_cut_balance",
+                    "required_lulu_cut": str(estimated_lulu_cut),
+                    "current_balance": str(user.wallet_balance),
+                    "estimated_shop_cut": str(estimated_shop_cut),
+                }
+            )
+
         win_percentage = Decimal("100") - cut_percentage
 
         try:
@@ -111,6 +139,7 @@ class GameCreateSerializer(serializers.ModelSerializer):
                     win_amount=validated_data["win_amount"],
                     total_pool=total_bet,
                     cut_percentage=cut_percentage,
+                    lulu_cut_percentage=lulu_cut_percentage,
                     win_percentage=win_percentage,
                     cartella_numbers=cartellas,
                     cartella_statuses={str(index): "active" for index in range(len(cartellas))},
@@ -127,6 +156,8 @@ class GameCreateSerializer(serializers.ModelSerializer):
                         "game_code": game.game_code,
                         "cartella_count": len(cartellas),
                         "bet_per_cartella": str(validated_data["bet_amount"]),
+                        "estimated_shop_cut": str(estimated_shop_cut),
+                        "estimated_lulu_cut": str(estimated_lulu_cut),
                     },
                 )
                 game.bet_debited_at = timezone.now()
@@ -407,6 +438,8 @@ class GameClaimResponseSerializer(serializers.Serializer):
     total_pool = serializers.CharField(required=False)
     payout_amount = serializers.CharField(required=False)
     shop_cut_amount = serializers.CharField(required=False)
+    lulu_cut_amount = serializers.CharField(required=False)
+    shop_net_cut_amount = serializers.CharField(required=False)
     called_numbers = serializers.ListField(child=serializers.IntegerField(), required=False)
     detail = serializers.CharField(required=False)
 
@@ -440,6 +473,8 @@ class GameHistoryItemSerializer(serializers.Serializer):
     total_pool = serializers.CharField()
     winner = serializers.ListField(child=serializers.CharField())
     shop_cut = serializers.CharField()
+    lulu_cut = serializers.CharField(required=False)
+    shop_net_cut = serializers.CharField(required=False)
     status = serializers.ChoiceField(choices=Game.Status.choices)
 
 

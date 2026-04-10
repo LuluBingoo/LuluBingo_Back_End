@@ -157,7 +157,7 @@ def _ensure_cartella_statuses(game: Game) -> dict[str, str]:
     return statuses
 
 
-def _resolve_game_financials(game: Game) -> tuple[Decimal, Decimal, Decimal]:
+def _resolve_game_financials(game: Game) -> tuple[Decimal, Decimal, Decimal, Decimal, Decimal]:
     total_pool = (
         game.total_pool
         if game.total_pool and game.total_pool > 0
@@ -166,13 +166,29 @@ def _resolve_game_financials(game: Game) -> tuple[Decimal, Decimal, Decimal]:
 
     cut_percentage = Decimal(str(game.cut_percentage if game.cut_percentage is not None else Decimal("10")))
     cut_percentage = max(Decimal("0"), min(Decimal("100"), cut_percentage))
+
+    lulu_cut_percentage = Decimal(
+        str(
+            game.lulu_cut_percentage
+            if game.lulu_cut_percentage is not None
+            else getattr(game.shop, "lulu_cut_percentage", Decimal("15"))
+        )
+    )
+    lulu_cut_percentage = max(Decimal("0"), min(Decimal("100"), lulu_cut_percentage))
+
     shop_cut = (total_pool * cut_percentage / Decimal("100")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    lulu_cut = (shop_cut * lulu_cut_percentage / Decimal("100")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    shop_net_cut = (shop_cut - lulu_cut).quantize(
         Decimal("0.01"), rounding=ROUND_HALF_UP
     )
     payout_amount = (total_pool - shop_cut).quantize(
         Decimal("0.01"), rounding=ROUND_HALF_UP
     )
-    return total_pool, payout_amount, shop_cut
+    return total_pool, payout_amount, shop_cut, lulu_cut, shop_net_cut
 
 
 def _recalculate_session_totals(session: ShopBingoSession) -> tuple[list[int], Decimal]:
@@ -225,21 +241,43 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
 
     cartella_map = {str(cartella_number): index for index, cartella_number in enumerate(all_cartella_numbers)}
 
-    feature_flags = session.shop.feature_flags if isinstance(session.shop.feature_flags, dict) else {}
-    cut_percentage_raw = feature_flags.get("cut_percentage")
-    if cut_percentage_raw is None and "win_percentage" in feature_flags:
-        cut_percentage_raw = Decimal("100") - Decimal(str(feature_flags.get("win_percentage", 90)))
+    session.shop.refresh_from_db(fields=["wallet_balance", "shop_cut_percentage", "lulu_cut_percentage"])
+
+    cut_percentage_raw = getattr(session.shop, "shop_cut_percentage", Decimal("10"))
+    lulu_cut_percentage_raw = getattr(session.shop, "lulu_cut_percentage", Decimal("15"))
 
     try:
         cut_percentage = Decimal(str(cut_percentage_raw if cut_percentage_raw is not None else 10))
     except Exception:
         cut_percentage = Decimal("10")
 
+    try:
+        lulu_cut_percentage = Decimal(
+            str(lulu_cut_percentage_raw if lulu_cut_percentage_raw is not None else 15)
+        )
+    except Exception:
+        lulu_cut_percentage = Decimal("15")
+
     cut_percentage = max(Decimal("0"), min(Decimal("100"), cut_percentage))
+    lulu_cut_percentage = max(Decimal("0"), min(Decimal("100"), lulu_cut_percentage))
     win_percentage = Decimal("100") - cut_percentage
     total_pool = session.total_payable
     if total_pool <= 0:
         raise ValueError("Session total payable must be greater than zero before game creation")
+
+    estimated_shop_cut = (total_pool * cut_percentage / Decimal("100")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    estimated_lulu_cut = (estimated_shop_cut * lulu_cut_percentage / Decimal("100")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+
+    if Decimal(str(session.shop.wallet_balance)) < estimated_lulu_cut:
+        raise ValueError(
+            "Insufficient balance to cover Lulu cut for this game. "
+            f"Required Lulu cut: {estimated_lulu_cut} ETB, "
+            f"current balance: {session.shop.wallet_balance} ETB."
+        )
 
     with db_transaction.atomic():
         game = Game.objects.create(
@@ -251,9 +289,12 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
             win_amount=session.total_payable,
             total_pool=total_pool,
             cut_percentage=cut_percentage,
+            lulu_cut_percentage=lulu_cut_percentage,
             win_percentage=win_percentage,
             payout_amount=Decimal("0"),
             shop_cut_amount=Decimal("0"),
+            lulu_cut_amount=Decimal("0"),
+            shop_net_cut_amount=Decimal("0"),
             cartella_numbers=cartella_boards,
             cartella_number_map=cartella_map,
             shop_players_data=players,
@@ -736,21 +777,43 @@ class GameClaimView(APIView):
                     status=status.HTTP_200_OK,
                 )
 
-            total_pool, payout_amount, shop_cut = _resolve_game_financials(game)
+            total_pool, payout_amount, shop_cut, lulu_cut, shop_net_cut = _resolve_game_financials(game)
 
             if shop_cut > 0:
                 apply_transaction(
                     user=game.shop,
                     amount=shop_cut,
                     tx_type=Transaction.Type.BET_CREDIT,
-                    reference=f"game:{game.game_code}:shop_cut",
+                    reference=f"game:{game.game_code}:shop_cut_gross",
                     metadata={
-                        "event": "bingo_shop_cut_credit",
+                        "event": "bingo_shop_cut_gross_credit",
                         "game_id": game.game_code,
                         "total_pool": str(total_pool),
-                        "cut_percentage": str(game.cut_percentage),
+                        "shop_cut_percentage": str(game.cut_percentage),
+                        "lulu_cut_percentage": str(game.lulu_cut_percentage),
                         "payout_amount": str(payout_amount),
                         "shop_cut": str(shop_cut),
+                        "lulu_cut": str(lulu_cut),
+                        "shop_net_cut": str(shop_net_cut),
+                        "winner_cartella_index": cartella_index,
+                        "pattern": selected_pattern,
+                    },
+                )
+
+            if lulu_cut > 0:
+                apply_transaction(
+                    user=game.shop,
+                    amount=lulu_cut,
+                    tx_type=Transaction.Type.LULU_CUT_DEBIT,
+                    reference=f"game:{game.game_code}:lulu_cut",
+                    metadata={
+                        "event": "bingo_lulu_cut_debit",
+                        "game_id": game.game_code,
+                        "total_pool": str(total_pool),
+                        "shop_cut": str(shop_cut),
+                        "lulu_cut_percentage": str(game.lulu_cut_percentage),
+                        "lulu_cut": str(lulu_cut),
+                        "shop_net_cut": str(shop_net_cut),
                         "winner_cartella_index": cartella_index,
                         "pattern": selected_pattern,
                     },
@@ -761,6 +824,8 @@ class GameClaimView(APIView):
                     "total_pool": str(total_pool),
                     "payout_amount": str(payout_amount),
                     "shop_cut_amount": str(shop_cut),
+                    "lulu_cut_amount": str(lulu_cut),
+                    "shop_net_cut_amount": str(shop_net_cut),
                 }
             )
             claim_log.append(claim_event)
@@ -774,6 +839,8 @@ class GameClaimView(APIView):
             game.cut_percentage = game.cut_percentage if game.cut_percentage is not None else Decimal("10")
             game.payout_amount = payout_amount
             game.shop_cut_amount = shop_cut
+            game.lulu_cut_amount = lulu_cut
+            game.shop_net_cut_amount = shop_net_cut
             game.ended_at = game.ended_at or timezone.now()
             game.awarded_claims = claim_log
             game.call_cursor = len(game.draw_sequence)
@@ -787,6 +854,8 @@ class GameClaimView(APIView):
                     "cut_percentage",
                     "payout_amount",
                     "shop_cut_amount",
+                    "lulu_cut_amount",
+                    "shop_net_cut_amount",
                     "ended_at",
                     "awarded_claims",
                     "call_cursor",
@@ -807,6 +876,8 @@ class GameClaimView(APIView):
                     "total_pool": str(total_pool),
                     "payout_amount": str(payout_amount),
                     "shop_cut_amount": str(shop_cut),
+                    "lulu_cut_amount": str(lulu_cut),
+                    "shop_net_cut_amount": str(shop_net_cut),
                     "detail": "Bingo confirmed. Game completed.",
                 },
                 status=status.HTTP_200_OK,
@@ -1306,6 +1377,8 @@ class GameAuditReportView(APIView):
             "num_players",
             "total_pool",
             "shop_cut_amount",
+            "lulu_cut_amount",
+            "shop_net_cut_amount",
             "status",
             "winners",
             "winning_pattern",
@@ -1328,6 +1401,8 @@ class GameAuditReportView(APIView):
                 "total_pool": str(game["total_pool"]),
                 "winner": winner_labels,
                 "shop_cut": str(game["shop_cut_amount"]),
+                "lulu_cut": str(game.get("lulu_cut_amount") or Decimal("0")),
+                "shop_net_cut": str(game.get("shop_net_cut_amount") or Decimal("0")),
                 "status": game["status"],
             }
 

@@ -42,9 +42,12 @@ class Game(models.Model):
     awarded_claims = models.JSONField(default=list, blank=True)  # successful and failed claim events
     total_pool = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     cut_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=10)
+    lulu_cut_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=15)
     win_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=90)
     payout_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     shop_cut_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    lulu_cut_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    shop_net_cut_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     winning_pattern = models.CharField(max_length=20, blank=True, default="")
     created_at = models.DateTimeField(default=timezone.now)
     started_at = models.DateTimeField(null=True, blank=True)

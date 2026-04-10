@@ -12,7 +12,7 @@ class TransactionError(Exception):
 
 
 CREDIT_TYPES = {Transaction.Type.DEPOSIT, Transaction.Type.BET_CREDIT, Transaction.Type.ADJUSTMENT}
-DEBIT_TYPES = {Transaction.Type.WITHDRAWAL, Transaction.Type.BET_DEBIT}
+DEBIT_TYPES = {Transaction.Type.WITHDRAWAL, Transaction.Type.BET_DEBIT, Transaction.Type.LULU_CUT_DEBIT}
 ALL_TYPES = CREDIT_TYPES | DEBIT_TYPES
 
 

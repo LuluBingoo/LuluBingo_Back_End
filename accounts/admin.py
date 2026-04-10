@@ -18,17 +18,27 @@ class ShopUserAdmin(UserAdmin):
     model = ShopUser
     list_display = (
         "username",
+        "role",
         "shop_code",
         "name",
         "contact_email",
         "status",
         "profile_completed",
         "wallet_balance",
+        "shop_cut_percentage",
+        "lulu_cut_percentage",
         "must_change_password",
         "two_factor_enabled",
         "created_at",
     )
-    list_filter = ("status", "must_change_password", "profile_completed", "two_factor_enabled", "created_at")
+    list_filter = (
+        "role",
+        "status",
+        "must_change_password",
+        "profile_completed",
+        "two_factor_enabled",
+        "created_at",
+    )
     search_fields = ("username", "name", "contact_phone", "contact_email")
     ordering = ("username",)
     readonly_fields = ("created_at", "shop_code", "totp_secret")
@@ -40,6 +50,7 @@ class ShopUserAdmin(UserAdmin):
                 "shop_code",
                 "name",
                 "password",
+                "role",
                 "status",
                 "profile_completed",
                 "must_change_password",
@@ -51,7 +62,16 @@ class ShopUserAdmin(UserAdmin):
         ("Contact", {"fields": ("contact_phone", "contact_email")}),
         (
             "Operational",
-            {"fields": ("wallet_balance", "commission_rate", "max_stake", "feature_flags")},
+            {
+                "fields": (
+                    "wallet_balance",
+                    "commission_rate",
+                    "shop_cut_percentage",
+                    "lulu_cut_percentage",
+                    "max_stake",
+                    "feature_flags",
+                )
+            },
         ),
         ("Banking", {"fields": ("bank_name", "bank_account_name", "bank_account_number")}),
         (
@@ -68,6 +88,7 @@ class ShopUserAdmin(UserAdmin):
                 "name",
                 "password1",
                 "password2",
+                "role",
                 "status",
                 "must_change_password",
                 "is_staff",

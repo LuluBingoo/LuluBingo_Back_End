@@ -1,5 +1,13 @@
 from django.urls import path
 
+from .admin_views import (
+    AdminGameListView,
+    AdminManagerDetailView,
+    AdminManagerListCreateView,
+    AdminShopDetailView,
+    AdminShopListCreateView,
+    AdminTransactionListView,
+)
 from .views import (
     ChangePasswordView,
     LoginView,
@@ -25,5 +33,11 @@ urlpatterns = [
     path("auth/2fa/enable", TwoFactorEnableView.as_view(), name="2fa-enable"),
     path("auth/2fa/disable", TwoFactorDisableView.as_view(), name="2fa-disable"),
     path("auth/2fa/email-code", TwoFactorEmailCodeView.as_view(), name="2fa-email-code"),
+    path("admin/managers", AdminManagerListCreateView.as_view(), name="admin-managers"),
+    path("admin/managers/<int:user_id>", AdminManagerDetailView.as_view(), name="admin-manager-detail"),
+    path("admin/shops", AdminShopListCreateView.as_view(), name="admin-shops"),
+    path("admin/shops/<int:user_id>", AdminShopDetailView.as_view(), name="admin-shop-detail"),
+    path("admin/games", AdminGameListView.as_view(), name="admin-games"),
+    path("admin/transactions", AdminTransactionListView.as_view(), name="admin-transactions"),
     path("shop/profile", ShopProfileView.as_view(), name="shop-profile"),
 ]

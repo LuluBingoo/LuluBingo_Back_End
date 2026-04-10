@@ -30,7 +30,13 @@ class ShopUserManager(BaseUserManager):
         username = username.lower()
         name = extra_fields.pop("name", username)
         extra_fields.setdefault("name", name)
-        extra_fields.setdefault("status", ShopUser.Status.PENDING)
+        role = str(extra_fields.get("role", ShopUser.Role.SHOP))
+        extra_fields.setdefault("role", role)
+        if role == ShopUser.Role.MANAGER:
+            extra_fields.setdefault("status", ShopUser.Status.ACTIVE)
+            extra_fields.setdefault("is_staff", True)
+        else:
+            extra_fields.setdefault("status", ShopUser.Status.PENDING)
         extra_fields.setdefault("feature_flags", {})
 
         user = self.model(username=username, **extra_fields)
@@ -42,6 +48,7 @@ class ShopUserManager(BaseUserManager):
     def create_superuser(self, username: str, password: str, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("role", ShopUser.Role.MANAGER)
         extra_fields.setdefault("status", ShopUser.Status.ACTIVE)
         extra_fields.setdefault("must_change_password", False)
         extra_fields.setdefault(
@@ -62,6 +69,10 @@ class ShopUserManager(BaseUserManager):
 
 
 class ShopUser(AbstractBaseUser, PermissionsMixin):
+    class Role(models.TextChoices):
+        SHOP = "shop", "Shop"
+        MANAGER = "manager", "Manager"
+
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         ACTIVE = "active", "Active"
@@ -74,10 +85,13 @@ class ShopUser(AbstractBaseUser, PermissionsMixin):
     human_shop_id = models.CharField(max_length=24, unique=True, null=True, blank=True, editable=False)
     contact_phone = models.CharField(max_length=50, unique=True)
     contact_email = models.EmailField(unique=True)
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.SHOP)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     must_change_password = models.BooleanField(default=True)
     wallet_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=5)
+    shop_cut_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=10)
+    lulu_cut_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=15)
     max_stake = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     feature_flags = models.JSONField(default=dict, blank=True)
     bank_name = models.CharField(max_length=100, blank=True)
@@ -172,6 +186,11 @@ class ShopUser(AbstractBaseUser, PermissionsMixin):
             self.two_factor_method = "totp"
 
     def save(self, *args, **kwargs):
+        if self.role == self.Role.MANAGER:
+            self.is_staff = True
+            if self.status == self.Status.PENDING:
+                self.status = self.Status.ACTIVE
+
         # Keep Django's is_active flag aligned with the business status.
         self.is_active = self.status == self.Status.ACTIVE
         self.sync_two_factor_status()

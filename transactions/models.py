@@ -9,6 +9,7 @@ class Transaction(models.Model):
         WITHDRAWAL = "withdrawal", "Withdrawal"
         BET_DEBIT = "bet_debit", "Bet debit"
         BET_CREDIT = "bet_credit", "Bet credit"
+        LULU_CUT_DEBIT = "lulu_cut_debit", "Lulu cut debit"
         ADJUSTMENT = "adjustment", "Adjustment"
 
     class ActorRole(models.TextChoices):
