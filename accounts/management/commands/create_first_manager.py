@@ -1,4 +1,5 @@
 from getpass import getpass
+import sys
 
 from django.contrib.auth.password_validation import validate_password
 from django.core.management.base import BaseCommand, CommandError
@@ -8,6 +9,11 @@ from accounts.models import ShopUser
 
 class Command(BaseCommand):
     help = "Create the first manager account for the admin portal."
+
+    @staticmethod
+    def _is_interactive() -> bool:
+        stdin = getattr(sys, "stdin", None)
+        return bool(stdin and hasattr(stdin, "isatty") and stdin.isatty())
 
     def add_arguments(self, parser):
         parser.add_argument("--username", type=str, help="Manager username")
@@ -26,7 +32,7 @@ class Command(BaseCommand):
         if value:
             return value
 
-        if not self.stdin.isatty():
+        if not self._is_interactive():
             raise CommandError(f"Missing required option --{key} in non-interactive mode.")
 
         while True:
@@ -42,7 +48,7 @@ class Command(BaseCommand):
             validate_password(password)
             return password
 
-        if not self.stdin.isatty():
+        if not self._is_interactive():
             raise CommandError("Missing required option --password in non-interactive mode.")
 
         while True:
