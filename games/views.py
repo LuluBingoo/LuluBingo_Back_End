@@ -928,9 +928,22 @@ class ShopBingoSessionReserveView(APIView):
             if player_index is not None:
                 if bool(players[player_index].get("paid", False)):
                     return Response({"detail": "Paid players cannot change cartella selection"}, status=status.HTTP_400_BAD_REQUEST)
+                if len(cartella_numbers) == 0:
+                    players.pop(player_index)
+                    session.players_data = players
+                    locked, total_payable = _recalculate_session_totals(session)
+                    session.locked_cartellas = locked
+                    session.total_payable = total_payable
+                    session.save(update_fields=["players_data", "locked_cartellas", "total_payable", "updated_at"])
+                    return Response(ShopBingoSessionSerializer(session).data)
             elif len(players) >= session.fixed_players:
                 return Response(
                     {"detail": f"Exactly {session.fixed_players} players are allowed"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            elif len(cartella_numbers) == 0:
+                return Response(
+                    {"detail": "Select at least one cartella for a new player"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
