@@ -164,7 +164,7 @@ class AdminManagerListCreateView(APIView):
         if manager.must_change_password:
             message_lines.append("A password change is required on your next login.")
 
-        _send_operation_email(
+        email_sent = _send_operation_email(
             manager,
             subject="Welcome to Lulu Bingo Admin",
             heading="Your manager account is ready",
@@ -173,8 +173,10 @@ class AdminManagerListCreateView(APIView):
             cta_url=_app_base_url(),
             banner_text="Welcome",
         )
+        payload = ShopUserSerializer(manager).data
+        payload["email_sent"] = bool(email_sent)
 
-        return Response(ShopUserSerializer(manager).data, status=status.HTTP_201_CREATED)
+        return Response(payload, status=status.HTTP_201_CREATED)
 
 
 class AdminManagerDetailView(APIView):
