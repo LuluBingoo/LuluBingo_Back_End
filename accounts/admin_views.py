@@ -148,6 +148,7 @@ class AdminManagerListCreateView(APIView):
     def post(self, request):
         serializer = ManagerCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        initial_password = serializer.validated_data.get("password", "")
         manager = serializer.save()
 
         provisioned_by = getattr(request.user, "name", "") or request.user.username
@@ -156,10 +157,12 @@ class AdminManagerListCreateView(APIView):
             "",
             "Your manager account is now active.",
             f"Username: {manager.username}",
+            f"Password: {initial_password}",
+            "Admin portal: https://admin.lulubingo.com",
             f"Status: {manager.get_status_display()}",
             f"Provisioned by: {provisioned_by}",
             "",
-            "Use the password shared with you by your administrator.",
+            "Please sign in and change this password immediately.",
         ]
         if manager.must_change_password:
             message_lines.append("A password change is required on your next login.")
@@ -169,8 +172,8 @@ class AdminManagerListCreateView(APIView):
             subject="Welcome to Lulu Bingo Admin",
             heading="Your manager account is ready",
             message="\n".join(message_lines),
-            cta_text="Open Lulu Bingo",
-            cta_url=_app_base_url(),
+            cta_text="Open Admin Portal",
+            cta_url="https://admin.lulubingo.com",
             banner_text="Welcome",
         )
         payload = ShopUserSerializer(manager).data
