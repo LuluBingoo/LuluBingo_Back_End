@@ -86,6 +86,25 @@ class LoginSerializer(serializers.Serializer):
             banner_text="Login Verification",
         )
 
+    @staticmethod
+    def _get_client_ip(request) -> str | None:
+        if request is None:
+            return None
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR")
+
+    @staticmethod
+    def _is_known_ip_for_user(user, ip_address: str | None) -> bool:
+        if not ip_address:
+            return False
+        return LoginAttempt.objects.filter(
+            user=user,
+            success=True,
+            ip_address=ip_address,
+        ).exists()
+
     def validate(self, attrs):
         username = attrs.get("username")
         password = attrs.get("password")
@@ -105,13 +124,80 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid credentials. Please check your username and password.")
 
         # Enforce OTP when 2FA is enabled
+        request = self.context.get("request")
+        otp = (attrs.get("otp") or "").strip()
+        resend_otp = attrs.get("resend_otp", False)
+
+        if user.role == ShopUser.Role.MANAGER:
+            client_ip = self._get_client_ip(request)
+            known_ip = self._is_known_ip_for_user(user, client_ip)
+
+            if not known_ip:
+                if not user.contact_email:
+                    raise serializers.ValidationError(
+                        {
+                            "otp": "New-device verification is required, but no contact email is configured.",
+                            "two_factor_method": "email_code",
+                            "two_factor_methods": ["email_code"],
+                        }
+                    )
+
+                if resend_otp or not otp:
+                    if not self._send_login_email_code(user):
+                        raise serializers.ValidationError(
+                            {
+                                "otp": "Could not send OTP email. Verify SMTP/email settings and try again.",
+                                "two_factor_method": "email_code",
+                                "two_factor_methods": ["email_code"],
+                            }
+                        )
+
+                    raise serializers.ValidationError(
+                        {
+                            "otp": "OTP is required for login.",
+                            "detail": "New device detected. A verification code has been sent to your email.",
+                            "two_factor_method": "email_code",
+                            "two_factor_methods": ["email_code"],
+                            "email_hint": self._mask_email(user.contact_email),
+                        }
+                    )
+
+                if not user.verify_email_2fa_code(otp):
+                    raise serializers.ValidationError(
+                        {
+                            "otp": "Invalid or expired OTP",
+                            "detail": "New device detected. Enter the verification code sent to your email.",
+                            "two_factor_method": "email_code",
+                            "two_factor_methods": ["email_code"],
+                            "email_hint": self._mask_email(user.contact_email),
+                        }
+                    )
+
+                user.clear_email_2fa_code()
+                user.save(
+                    update_fields=[
+                        "two_factor_email_code",
+                        "two_factor_email_code_expires_at",
+                    ]
+                )
+
+            elif resend_otp:
+                raise serializers.ValidationError(
+                    {
+                        "detail": "Current device is already recognized. New-device OTP is not required.",
+                        "two_factor_method": "email_code",
+                        "two_factor_methods": ["email_code"],
+                    }
+                )
+
+            attrs["user"] = user
+            return attrs
+
         if getattr(user, "two_factor_enabled", False):
             enabled_methods = user.get_enabled_2fa_methods()
             if not enabled_methods:
                 fallback_method = getattr(user, "two_factor_method", "totp") or "totp"
                 enabled_methods = [fallback_method]
-            otp = (attrs.get("otp") or "").strip()
-            resend_otp = attrs.get("resend_otp", False)
             preferred_method = (
                 user.two_factor_method
                 if user.two_factor_method in enabled_methods

@@ -264,6 +264,57 @@ class AuthTests(APITestCase):
             str(resp_resend.data.get("detail", [""])[0]).lower(),
         )
 
+    def test_manager_login_requires_otp_only_for_new_ip(self):
+        manager = ShopUser.objects.create_user(
+            username="manager_new_device",
+            password="managerpass123",
+            name="Manager Device",
+            contact_email="manager.device@example.com",
+            contact_phone="+251900100111",
+            role=ShopUser.Role.MANAGER,
+        )
+        manager.status = ShopUser.Status.ACTIVE
+        manager.save()
+
+        url = reverse("login")
+        mail.outbox.clear()
+
+        first_attempt = self.client.post(
+            url,
+            {"username": "manager_new_device", "password": "managerpass123"},
+            format="json",
+            HTTP_X_FORWARDED_FOR="10.10.0.1",
+        )
+        self.assertEqual(first_attempt.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(first_attempt.data.get("two_factor_method", [""])[0], "email_code")
+        self.assertIn(
+            "new device detected",
+            str(first_attempt.data.get("detail", [""])[0]).lower(),
+        )
+
+        manager.refresh_from_db()
+        self.assertTrue(manager.two_factor_email_code)
+
+        second_attempt = self.client.post(
+            url,
+            {
+                "username": "manager_new_device",
+                "password": "managerpass123",
+                "otp": manager.two_factor_email_code,
+            },
+            format="json",
+            HTTP_X_FORWARDED_FOR="10.10.0.1",
+        )
+        self.assertEqual(second_attempt.status_code, status.HTTP_200_OK)
+
+        known_ip_attempt = self.client.post(
+            url,
+            {"username": "manager_new_device", "password": "managerpass123"},
+            format="json",
+            HTTP_X_FORWARDED_FOR="10.10.0.1",
+        )
+        self.assertEqual(known_ip_attempt.status_code, status.HTTP_200_OK)
+
     def test_2fa_setup_enable_disable_flow(self):
         login_resp = self.client.post(reverse("login"), {"username": "shop1", "password": "pass1234"}, format="json")
         token = login_resp.data["token"]
