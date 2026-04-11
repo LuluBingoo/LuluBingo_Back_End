@@ -123,6 +123,11 @@ class LoginSerializer(serializers.Serializer):
 
             raise serializers.ValidationError("Invalid credentials. Please check your username and password.")
 
+        if user.role == ShopUser.Role.DEVELOPER:
+            raise serializers.ValidationError(
+                "This account type cannot access the admin API login.",
+            )
+
         # Enforce OTP when 2FA is enabled
         request = self.context.get("request")
         otp = (attrs.get("otp") or "").strip()

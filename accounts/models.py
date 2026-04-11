@@ -27,7 +27,22 @@ class ShopUserManager(BaseUserManager):
         if not extra_fields.get("contact_phone"):
             raise ValueError("Contact phone must be set")
 
-        username = username.lower()
+        username = username.lower().strip()
+        contact_email = str(extra_fields.get("contact_email", "")).strip().lower()
+        contact_phone = str(extra_fields.get("contact_phone", "")).strip()
+
+        if self.model.objects.filter(username=username).exists():
+            raise ValueError("Username already exists. Please choose a different username.")
+
+        if self.model.objects.filter(contact_email__iexact=contact_email).exists():
+            raise ValueError("Contact email already exists. Use another email address.")
+
+        if self.model.objects.filter(contact_phone=contact_phone).exists():
+            raise ValueError("Contact phone already exists. Use another phone number.")
+
+        extra_fields["contact_email"] = contact_email
+        extra_fields["contact_phone"] = contact_phone
+
         name = extra_fields.pop("name", username)
         extra_fields.setdefault("name", name)
         role = str(extra_fields.get("role", ShopUser.Role.SHOP))
@@ -72,6 +87,7 @@ class ShopUser(AbstractBaseUser, PermissionsMixin):
     class Role(models.TextChoices):
         SHOP = "shop", "Shop"
         MANAGER = "manager", "Manager"
+        DEVELOPER = "developer", "Developer"
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
