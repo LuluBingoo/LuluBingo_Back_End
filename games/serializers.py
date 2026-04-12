@@ -12,6 +12,18 @@ from transactions.models import Transaction
 from transactions.services import apply_transaction
 
 
+def _normalize_cartella_board(board: list[int] | tuple[int, ...] | None) -> list[int] | None:
+    if not isinstance(board, (list, tuple)):
+        return None
+
+    normalized = list(board[:25])
+    if len(normalized) < 25:
+        return None
+
+    normalized[12] = 0
+    return normalized
+
+
 def _resolve_game_financials(game: Game) -> tuple[Decimal, Decimal, Decimal, Decimal, Decimal]:
     total_pool = (
         game.total_pool
@@ -286,11 +298,11 @@ class GameClaimSerializer(serializers.Serializer):
             raise serializers.ValidationError({"cartella_index": "Cartella index out of range"})
 
         called_set = set(called_numbers)
-        cartella_numbers = game.cartella_numbers[cartella_index]
-        if len(cartella_numbers) == 25:
-            winning_numbers = [number for index, number in enumerate(cartella_numbers) if index != 12]
-        else:
-            winning_numbers = list(cartella_numbers)
+        cartella_numbers = _normalize_cartella_board(game.cartella_numbers[cartella_index])
+        if cartella_numbers is None:
+            raise serializers.ValidationError({"cartella_index": "Cartella board data is invalid"})
+
+        winning_numbers = [number for index, number in enumerate(cartella_numbers) if index != 12]
 
         missing_numbers = [number for number in winning_numbers if number not in called_set]
         attrs["is_bingo"] = len(missing_numbers) == 0

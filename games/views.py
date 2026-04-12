@@ -46,6 +46,18 @@ ALLOWED_TX_TYPE_FILTERS = {choice[0] for choice in Transaction.Type.choices}
 ALLOWED_CLAIM_PATTERNS = {"row", "diagonal"}
 
 
+def _normalize_cartella_board(board: list[int] | tuple[int, ...] | None) -> list[int] | None:
+    if not isinstance(board, (list, tuple)):
+        return None
+
+    normalized = list(board[:25])
+    if len(normalized) < 25:
+        return None
+
+    normalized[12] = 0
+    return normalized
+
+
 def _generate_cartella_board() -> list[int]:
     columns: list[list[int]] = []
     ranges = [(1, 15), (16, 30), (31, 45), (46, 60), (61, 75)]
@@ -112,14 +124,15 @@ def _board_matches_pattern(
     pattern: str,
 ) -> bool:
     normalized = pattern.strip().lower()
-    if len(board) != 25:
+    normalized_board = _normalize_cartella_board(board)
+    if normalized_board is None:
         return False
 
     def is_marked(value: int) -> bool:
         return value == 0 or value in called_set
 
     # Board is stored in row-major order: row1/col1, row1/col2, ... row5/col5.
-    grid = [board[row * 5 : (row + 1) * 5] for row in range(5)]
+    grid = [normalized_board[row * 5 : (row + 1) * 5] for row in range(5)]
 
     if normalized == "row":
         return any(all(is_marked(value) for value in row) for row in grid)
@@ -578,11 +591,16 @@ class GameCartellaDrawView(APIView):
         cartella_index = cartella_number - 1
         if cartella_index < 0 or cartella_index >= len(game.cartella_draw_sequences):
             return Response({"detail": "Cartella not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        board = _normalize_cartella_board(game.cartella_numbers[cartella_index])
+        if board is None:
+            return Response({"detail": "Cartella board is invalid"}, status=status.HTTP_400_BAD_REQUEST)
+
         return Response(
             {
                 "game_code": game.game_code,
                 "cartella_number": cartella_number,
-                "cartella_numbers": game.cartella_numbers[cartella_index],
+                "cartella_numbers": board,
                 "cartella_draw_sequence": game.cartella_draw_sequences[cartella_index],
             }
         )
@@ -715,7 +733,12 @@ class GameClaimView(APIView):
 
             called_numbers_sequence = called_numbers_sequence or list(game.called_numbers or [])
             called_numbers = set(called_numbers_sequence)
-            board = game.cartella_numbers[cartella_index]
+            board = _normalize_cartella_board(game.cartella_numbers[cartella_index])
+            if board is None:
+                return Response(
+                    {"detail": "Cartella board data is invalid"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             detected_pattern = _detect_winning_pattern(board, called_numbers)
             selected_pattern = pattern or detected_pattern or "row"
             is_winner = bool(detected_pattern) if not pattern else _board_matches_pattern(board, called_numbers, pattern)
@@ -1190,9 +1213,13 @@ class BasePublicGameCartellaView(APIView):
         if cartella_index is None:
             return None
 
+        board = _normalize_cartella_board(game.cartella_numbers[cartella_index])
+        if board is None:
+            return None
+
         return {
             "cartella_number": cartella_number,
-            "cartella_numbers": game.cartella_numbers[cartella_index],
+            "cartella_numbers": board,
             "cartella_draw_sequence": game.cartella_draw_sequences[cartella_index],
         }
 
