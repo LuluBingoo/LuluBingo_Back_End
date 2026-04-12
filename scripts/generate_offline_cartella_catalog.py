@@ -45,7 +45,17 @@ def _write_frontend_ts(catalog_dict: dict[str, list[int]]) -> None:
         + json.dumps(catalog_dict, indent=2)
         + ";\n\n"
         + "export const getOfflineCartellaBoard = (cartellaNumber: string | number): number[] | undefined => {\n"
-        + "  return OFFLINE_CARTELLA_CATALOG[String(cartellaNumber)];\n"
+        + "  const rawBoard = OFFLINE_CARTELLA_CATALOG[String(cartellaNumber)];\n"
+        + "  if (!rawBoard) {\n"
+        + "    return undefined;\n"
+        + "  }\n\n"
+        + "  // Ensure every offline board is exactly 5x5 and has FREE cell in the middle.\n"
+        + "  const normalizedBoard = rawBoard.slice(0, 25);\n"
+        + "  if (normalizedBoard.length < 25) {\n"
+        + "    return undefined;\n"
+        + "  }\n"
+        + "  normalizedBoard[12] = 0;\n\n"
+        + "  return normalizedBoard;\n"
         + "};\n"
     )
     FRONTEND_OUTPUT_PATH.write_text(content, encoding="utf-8")
@@ -77,7 +87,7 @@ def main() -> None:
         for row in range(5):
             row_values: list[str] = []
             for col in range(5):
-                value = board[col * 5 + row]
+                value = board[row * 5 + col]
                 row_values.append("FREE" if value == 0 else str(value))
             lines.append("| " + " | ".join(row_values) + " |")
         lines.append("")

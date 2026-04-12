@@ -271,7 +271,7 @@ class GameTests(APITestCase):
         )
         winning_code = winning_create_resp.data["game_code"]
         winning_game = Game.objects.get(game_code=winning_code)
-        winning_numbers = [1, 6, 11, 16, 21]
+        winning_numbers = [1, 2, 3, 4, 5]
         winning_game.called_numbers = winning_numbers
         winning_game.save(update_fields=["called_numbers"])
         winning_claim = self.client.post(

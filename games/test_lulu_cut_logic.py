@@ -61,7 +61,7 @@ class LuluCutGameFlowTests(APITestCase):
         self.assertEqual(create_resp.status_code, status.HTTP_201_CREATED)
         code = create_resp.data["game_code"]
 
-        winning_numbers = [1, 6, 11, 16, 21]
+        winning_numbers = [1, 2, 3, 4, 5]
         claim_resp = self.client.post(
             reverse("game-claim", args=[code]),
             {"cartella_index": 0, "called_numbers": winning_numbers},

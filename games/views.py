@@ -47,13 +47,15 @@ ALLOWED_CLAIM_PATTERNS = {"row", "diagonal"}
 
 
 def _generate_cartella_board() -> list[int]:
-    numbers: list[int] = []
+    columns: list[list[int]] = []
     ranges = [(1, 15), (16, 30), (31, 45), (46, 60), (61, 75)]
     for min_n, max_n in ranges:
-        col = random.sample(range(min_n, max_n + 1), 5)
-        numbers.extend(col)
-    numbers[12] = 0
-    return numbers
+        columns.append(random.sample(range(min_n, max_n + 1), 5))
+
+    # Flatten as row-major: row1/col1, row1/col2, ... row5/col5.
+    board = [columns[col][row] for row in range(5) for col in range(5)]
+    board[12] = 0
+    return board
 
 
 def _generate_unique_cartella_boards(count: int) -> list[list[int]]:
@@ -116,8 +118,8 @@ def _board_matches_pattern(
     def is_marked(value: int) -> bool:
         return value == 0 or value in called_set
 
-    # Board is stored in column-major order (col * 5 + row), matching frontend rendering.
-    grid = [[board[col * 5 + row] for col in range(5)] for row in range(5)]
+    # Board is stored in row-major order: row1/col1, row1/col2, ... row5/col5.
+    grid = [board[row * 5 : (row + 1) * 5] for row in range(5)]
 
     if normalized == "row":
         return any(all(is_marked(value) for value in row) for row in grid)
