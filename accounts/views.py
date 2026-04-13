@@ -1,4 +1,5 @@
 import os
+import re
 
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
@@ -36,6 +37,82 @@ def _get_client_ip(request):
     if x_forwarded_for:
         return x_forwarded_for.split(",")[0].strip()
     return request.META.get("REMOTE_ADDR")
+
+
+def _get_client_address(request) -> str:
+    meta = request.META
+    city = (
+        meta.get("HTTP_CF_IPCITY")
+        or meta.get("HTTP_X_APPENGINE_CITY")
+        or meta.get("HTTP_X_CITY")
+        or meta.get("HTTP_GEOIP_CITY")
+        or ""
+    ).strip()
+    region = (
+        meta.get("HTTP_CF_REGION")
+        or meta.get("HTTP_X_APPENGINE_REGION")
+        or meta.get("HTTP_X_REGION")
+        or meta.get("HTTP_GEOIP_REGION")
+        or ""
+    ).strip()
+    country = (
+        meta.get("HTTP_CF_IPCOUNTRY")
+        or meta.get("HTTP_X_APPENGINE_COUNTRY")
+        or meta.get("HTTP_X_COUNTRY")
+        or meta.get("HTTP_X_COUNTRY_CODE")
+        or meta.get("HTTP_GEOIP_COUNTRY_NAME")
+        or ""
+    ).strip()
+
+    parts = [part for part in (city, region, country) if part]
+    if parts:
+        return ", ".join(parts)
+    return "Address unavailable"
+
+
+def _get_browser_name(request) -> str:
+    user_agent = (request.META.get("HTTP_USER_AGENT") or "").strip().lower()
+    if not user_agent:
+        return "Unknown browser"
+
+    browser_checks = [
+        (r"edg/", "Microsoft Edge"),
+        (r"opr/|opera", "Opera"),
+        (r"firefox|fxios", "Firefox"),
+        (r"samsungbrowser", "Samsung Internet"),
+        (r"chrome|crios", "Google Chrome"),
+        (r"safari", "Safari"),
+        (r"trident|msie", "Internet Explorer"),
+        (r"postmanruntime", "Postman Runtime"),
+        (r"curl", "curl"),
+        (r"httpie", "HTTPie"),
+    ]
+    for pattern, browser_name in browser_checks:
+        if re.search(pattern, user_agent):
+            if browser_name == "Safari" and re.search(r"chrome|crios|opr/|edg/", user_agent):
+                continue
+            return browser_name
+    return "Unknown browser"
+
+
+def _get_device_os(request) -> str:
+    user_agent = (request.META.get("HTTP_USER_AGENT") or "").strip().lower()
+    if not user_agent:
+        return "Unknown device"
+
+    if "iphone" in user_agent:
+        return "iPhone (iOS)"
+    if "ipad" in user_agent:
+        return "iPad (iPadOS)"
+    if "android" in user_agent:
+        return "Android device"
+    if "windows" in user_agent:
+        return "Windows"
+    if "mac os x" in user_agent or "macintosh" in user_agent:
+        return "macOS"
+    if "linux" in user_agent:
+        return "Linux"
+    return "Unknown device"
 
 
 def _record_attempt(username: str, success: bool, request, user=None):
@@ -112,10 +189,23 @@ class LoginView(APIView):
         token, _ = Token.objects.get_or_create(user=user)
         _record_attempt(user.username, True, request, user=user)
         missing_profile_fields = _get_missing_profile_fields(user)
+        login_time = timezone.now()
+        ip_address = _get_client_ip(request) or "unknown"
+        client_address = _get_client_address(request)
+        browser_name = _get_browser_name(request)
+        device_os = _get_device_os(request)
         _send_security_email(
             user,
             "Login notification",
-            f"A login to your shop account occurred at {timezone.now():%Y-%m-%d %H:%M:%S} from IP {_get_client_ip(request) or 'unknown'}.",
+            (
+                "A login to your shop account was detected.\n"
+                f"Time: {login_time:%Y-%m-%d %H:%M:%S}\n"
+                f"Address: {client_address}\n"
+                f"IP: {ip_address}\n"
+                f"Browser: {browser_name}\n\n"
+                f"Device/OS: {device_os}\n\n"
+                "If this wasn't you, set up 2FA and change your password immediately."
+            ),
         )
         return Response(
             {

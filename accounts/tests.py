@@ -120,6 +120,11 @@ class AuthTests(APITestCase):
         self.client.post(url, {"username": "shop1", "password": "pass1234"}, format="json")
         self.assertGreaterEqual(len(mail.outbox), 1)
         self.assertIn("Login notification", mail.outbox[0].subject)
+        self.assertIn("Address:", mail.outbox[0].body)
+        self.assertIn("Browser:", mail.outbox[0].body)
+        self.assertIn("Device/OS:", mail.outbox[0].body)
+        self.assertIn("set up 2FA", mail.outbox[0].body)
+        self.assertIn("change your password immediately", mail.outbox[0].body)
 
     def test_password_change_sends_email_notification(self):
         login_resp = self.client.post(reverse("login"), {"username": "shop1", "password": "pass1234"}, format="json")
