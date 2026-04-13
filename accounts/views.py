@@ -1,5 +1,10 @@
 import os
 import re
+import ipaddress
+import json
+from functools import lru_cache
+from urllib.error import URLError
+from urllib.request import Request, urlopen
 
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
@@ -39,6 +44,43 @@ def _get_client_ip(request):
     return request.META.get("REMOTE_ADDR")
 
 
+@lru_cache(maxsize=512)
+def _lookup_address_from_ip(ip_address: str) -> str:
+    if not ip_address:
+        return "Address unavailable"
+
+    try:
+        parsed_ip = ipaddress.ip_address(ip_address)
+    except ValueError:
+        return "Address unavailable"
+
+    if parsed_ip.is_private or parsed_ip.is_loopback or parsed_ip.is_link_local:
+        return "Local/Private network"
+
+    lookup_url_template = getattr(settings, "IP_GEO_LOOKUP_URL", "https://ipwho.is/{ip}")
+    timeout = float(getattr(settings, "IP_GEO_LOOKUP_TIMEOUT", 1.5))
+
+    try:
+        lookup_url = lookup_url_template.format(ip=ip_address)
+        request = Request(lookup_url, headers={"User-Agent": "LuluBingo/1.0"})
+        with urlopen(request, timeout=timeout) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (URLError, TimeoutError, ValueError, json.JSONDecodeError):
+        return "Address unavailable"
+
+    if isinstance(payload, dict) and payload.get("success") is False:
+        return "Address unavailable"
+
+    city = str(payload.get("city") or "").strip()
+    region = str(payload.get("region") or payload.get("region_name") or "").strip()
+    country = str(payload.get("country") or payload.get("country_name") or "").strip()
+
+    parts = [part for part in (city, region, country) if part]
+    if parts:
+        return ", ".join(parts)
+    return "Address unavailable"
+
+
 def _get_client_address(request) -> str:
     meta = request.META
     city = (
@@ -67,7 +109,8 @@ def _get_client_address(request) -> str:
     parts = [part for part in (city, region, country) if part]
     if parts:
         return ", ".join(parts)
-    return "Address unavailable"
+
+    return _lookup_address_from_ip(_get_client_ip(request) or "")
 
 
 def _get_browser_name(request) -> str:

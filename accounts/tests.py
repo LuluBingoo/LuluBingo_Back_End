@@ -1,4 +1,5 @@
 import pyotp
+from unittest.mock import patch
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
 from django.test import override_settings
@@ -125,6 +126,20 @@ class AuthTests(APITestCase):
         self.assertIn("Device/OS:", mail.outbox[0].body)
         self.assertIn("set up 2FA", mail.outbox[0].body)
         self.assertIn("change your password immediately", mail.outbox[0].body)
+
+    @patch("accounts.views._lookup_address_from_ip", return_value="Addis Ababa, Addis Ababa, Ethiopia")
+    def test_login_uses_ip_geolocation_fallback_for_address(self, mock_lookup):
+        mail.outbox.clear()
+        url = reverse("login")
+        self.client.post(
+            url,
+            {"username": "shop1", "password": "pass1234"},
+            format="json",
+            REMOTE_ADDR="8.8.8.8",
+        )
+        self.assertGreaterEqual(len(mail.outbox), 1)
+        self.assertIn("Address: Addis Ababa, Addis Ababa, Ethiopia", mail.outbox[0].body)
+        mock_lookup.assert_called_once_with("8.8.8.8")
 
     def test_password_change_sends_email_notification(self):
         login_resp = self.client.post(reverse("login"), {"username": "shop1", "password": "pass1234"}, format="json")
