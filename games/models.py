@@ -34,7 +34,7 @@ class Game(models.Model):
     game_mode = models.CharField(max_length=20, choices=Mode.choices, default=Mode.STANDARD)
     cartella_number_map = models.JSONField(default=dict, blank=True)  # cartellaNumber(string)->index
     shop_players_data = models.JSONField(default=list, blank=True)
-    min_bet_per_cartella = models.DecimalField(max_digits=12, decimal_places=2, default=20)
+    min_bet_per_cartella = models.DecimalField(max_digits=12, decimal_places=2, default=10)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     winners = models.JSONField(default=list, blank=True)  # indices of winning cartella(s)
     banned_cartellas = models.JSONField(default=list, blank=True)  # banned cartella indexes
@@ -113,8 +113,8 @@ class ShopBingoSession(models.Model):
     session_id = models.CharField(max_length=24, unique=True, editable=False)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.WAITING)
     play_mode = models.CharField(max_length=20, choices=PlayMode.choices, default=PlayMode.OFFLINE)
-    fixed_players = models.PositiveSmallIntegerField(default=4)
-    min_bet_per_cartella = models.DecimalField(max_digits=12, decimal_places=2, default=20)
+    fixed_players = models.PositiveIntegerField(default=4)
+    min_bet_per_cartella = models.DecimalField(max_digits=12, decimal_places=2, default=10)
     players_data = models.JSONField(default=list, blank=True)
     locked_cartellas = models.JSONField(default=list, blank=True)
     total_payable = models.DecimalField(max_digits=12, decimal_places=2, default=0)

@@ -331,13 +331,13 @@ class ShopBingoSessionSerializer(serializers.ModelSerializer):
 
 
 class ShopBingoSessionCreateSerializer(serializers.Serializer):
-    min_bet_per_cartella = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=Decimal("20.00"))
-    fixed_players = serializers.IntegerField(required=False, min_value=2, max_value=7, default=4)
+    min_bet_per_cartella = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    fixed_players = serializers.IntegerField(required=False, min_value=2, default=4)
     play_mode = serializers.ChoiceField(choices=ShopBingoSession.PlayMode.choices, required=False, default=ShopBingoSession.PlayMode.OFFLINE)
 
     def validate_min_bet_per_cartella(self, value: Decimal):
-        if value < Decimal("20.00"):
-            raise serializers.ValidationError("Minimum bet per cartella is 20 ETB")
+        if value < Decimal("10.00"):
+            raise serializers.ValidationError("Minimum bet per cartella is 10 ETB")
         return value
 
 
@@ -363,8 +363,8 @@ class ShopBingoCartellaSelectSerializer(serializers.Serializer):
         return value
 
     def validate_bet_per_cartella(self, value: Decimal):
-        if value < Decimal("20.00"):
-            raise serializers.ValidationError("Minimum bet per cartella is 20 ETB")
+        if value < Decimal("10.00"):
+            raise serializers.ValidationError("Minimum bet per cartella is 10 ETB")
         return value
 
 

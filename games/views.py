@@ -894,11 +894,25 @@ class ShopBingoSessionCreateView(APIView):
         serializer = ShopBingoSessionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        requested_min_bet = serializer.validated_data.get("min_bet_per_cartella")
+        if requested_min_bet is None:
+            raw_setting_value = (getattr(request.user, "feature_flags", {}) or {}).get(
+                "default_game_bet",
+                "10",
+            )
+            try:
+                requested_min_bet = Decimal(str(raw_setting_value))
+            except Exception:
+                requested_min_bet = Decimal("10.00")
+
+            if requested_min_bet < Decimal("10.00"):
+                requested_min_bet = Decimal("10.00")
+
         session = ShopBingoSession.objects.create(
             shop=request.user,
             play_mode=serializer.validated_data.get("play_mode", ShopBingoSession.PlayMode.OFFLINE),
             fixed_players=serializer.validated_data.get("fixed_players", 4),
-            min_bet_per_cartella=serializer.validated_data["min_bet_per_cartella"],
+            min_bet_per_cartella=requested_min_bet,
         )
         return Response(ShopBingoSessionSerializer(session).data, status=status.HTTP_201_CREATED)
 
