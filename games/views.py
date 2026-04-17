@@ -522,57 +522,58 @@ class GameNextCallView(APIView):
         tags=["Games"],
     )
     def post(self, request, code: str):
-        game = get_object_or_404(
-            Game.objects.only(
-                "game_code",
-                "status",
-                "draw_sequence",
-                "called_numbers",
-                "call_cursor",
-                "current_called_number",
-            ),
-            game_code=code,
-            shop=request.user,
-        )
-
-        if game.status != Game.Status.ACTIVE:
-            return Response(
-                {"detail": "Game must be active before calling numbers"},
-                status=status.HTTP_400_BAD_REQUEST,
+        with db_transaction.atomic():
+            game = get_object_or_404(
+                Game.objects.select_for_update().only(
+                    "game_code",
+                    "status",
+                    "draw_sequence",
+                    "called_numbers",
+                    "call_cursor",
+                    "current_called_number",
+                ),
+                game_code=code,
+                shop=request.user,
             )
 
-        if game.call_cursor >= len(game.draw_sequence):
+            if game.status != Game.Status.ACTIVE:
+                return Response(
+                    {"detail": "Game must be active before calling numbers"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if game.call_cursor >= len(game.draw_sequence):
+                return Response(
+                    {
+                        "game_code": game.game_code,
+                        "is_complete": True,
+                        "called_numbers": game.called_numbers,
+                        "current_called_number": game.current_called_number,
+                        "current_called_formatted": _format_called_number(game.current_called_number)
+                        if game.current_called_number
+                        else None,
+                    }
+                )
+
+            called_numbers = list(game.called_numbers)
+
+            next_number = game.draw_sequence[game.call_cursor]
+            called_numbers.append(next_number)
+            game.called_numbers = called_numbers
+            game.call_cursor += 1
+            game.current_called_number = next_number
+            game.save(update_fields=["called_numbers", "call_cursor", "current_called_number"])
+
             return Response(
                 {
                     "game_code": game.game_code,
-                    "is_complete": True,
+                    "called_number": next_number,
+                    "called_formatted": _format_called_number(next_number),
                     "called_numbers": game.called_numbers,
-                    "current_called_number": game.current_called_number,
-                    "current_called_formatted": _format_called_number(game.current_called_number)
-                    if game.current_called_number
-                    else None,
+                    "call_cursor": game.call_cursor,
+                    "is_complete": game.call_cursor >= len(game.draw_sequence),
                 }
             )
-
-        called_numbers = list(game.called_numbers)
-
-        next_number = game.draw_sequence[game.call_cursor]
-        called_numbers.append(next_number)
-        game.called_numbers = called_numbers
-        game.call_cursor += 1
-        game.current_called_number = next_number
-        game.save(update_fields=["called_numbers", "call_cursor", "current_called_number"])
-
-        return Response(
-            {
-                "game_code": game.game_code,
-                "called_number": next_number,
-                "called_formatted": _format_called_number(next_number),
-                "called_numbers": game.called_numbers,
-                "call_cursor": game.call_cursor,
-                "is_complete": game.call_cursor >= len(game.draw_sequence),
-            }
-        )
 
 
 class GameCartellaDrawView(APIView):
