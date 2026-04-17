@@ -194,6 +194,27 @@ class AuthTests(APITestCase):
         self.assertGreaterEqual(len(mail.outbox), 1)
         self.assertIn("Profile updated", mail.outbox[0].subject)
 
+    def test_feature_flag_preferences_update_merges_without_email(self):
+        login_resp = self.client.post(reverse("login"), {"username": "shop1", "password": "pass1234"}, format="json")
+        token = login_resp.data["token"]
+
+        self.user.feature_flags = {"currency": "birr", "auto_call_seconds": 5}
+        self.user.save(update_fields=["feature_flags"])
+        mail.outbox.clear()
+
+        resp = self.client.put(
+            reverse("shop-profile"),
+            {"feature_flags": {"theme": "dark"}},
+            format="json",
+            HTTP_AUTHORIZATION=f"Token {token}",
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["feature_flags"]["theme"], "dark")
+        self.assertEqual(resp.data["feature_flags"]["currency"], "birr")
+        self.assertEqual(resp.data["feature_flags"]["auto_call_seconds"], 5)
+        self.assertEqual(len(mail.outbox), 0)
+
     def test_reset_confirm_updates_password_and_issues_token(self):
         uid = urlsafe_base64_encode(force_bytes(self.user.pk))
         token = default_token_generator.make_token(self.user)

@@ -351,12 +351,14 @@ class ShopProfileView(APIView):
     def put(self, request):
         serializer = ShopProfileSerializer(instance=request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        updated_fields = set(serializer.validated_data.keys())
         user = serializer.save()
-        _send_security_email(
-            user,
-            "Profile updated",
-            "Your shop profile was updated. If you did not make this change, please contact support immediately.",
-        )
+        if updated_fields - {"feature_flags"}:
+            _send_security_email(
+                user,
+                "Profile updated",
+                "Your shop profile was updated. If you did not make this change, please contact support immediately.",
+            )
         return Response(serializer.data)
 
 

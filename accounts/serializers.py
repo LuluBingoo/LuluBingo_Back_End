@@ -507,6 +507,14 @@ class ShopProfileSerializer(serializers.ModelSerializer):
             "bank_account_number",
         }
 
+        feature_flags_patch = validated_data.pop("feature_flags", None)
+        if feature_flags_patch is not None:
+            existing_flags = (
+                instance.feature_flags if isinstance(instance.feature_flags, dict) else {}
+            )
+            if isinstance(feature_flags_patch, dict):
+                instance.feature_flags = {**existing_flags, **feature_flags_patch}
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
