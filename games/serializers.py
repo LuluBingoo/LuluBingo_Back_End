@@ -283,7 +283,10 @@ class GameClaimSerializer(serializers.Serializer):
         allow_empty=False,
         required=False,
     )
-    pattern = serializers.ChoiceField(choices=[("row", "row"), ("diagonal", "diagonal")], required=False)
+    pattern = serializers.ChoiceField(
+        choices=[("row", "row"), ("column", "column"), ("diagonal", "diagonal")],
+        required=False,
+    )
     ban_on_false_claim = serializers.BooleanField(required=False, default=True)
 
     def validate(self, attrs):

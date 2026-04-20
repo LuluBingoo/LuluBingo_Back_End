@@ -284,6 +284,33 @@ class GameTests(APITestCase):
         self.assertTrue(winning_claim.data["is_bingo"])
         self.assertEqual(winning_claim.data["pattern"], "row")
 
+    def test_claim_validates_column_pattern(self):
+        headers = self.auth_headers()
+        payload = {
+            "bet_amount": "10.00",
+            "num_players": 1,
+            "win_amount": "50.00",
+            "cartella_numbers": [list(range(1, 26))],
+        }
+        create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
+        code = create_resp.data["game_code"]
+
+        winning_column_numbers = [1, 6, 11, 16, 21]
+        claim_resp = self.client.post(
+            reverse("game-claim", args=[code]),
+            {
+                "cartella_index": 0,
+                "pattern": "column",
+                "called_numbers": winning_column_numbers,
+            },
+            format="json",
+            **headers,
+        )
+
+        self.assertEqual(claim_resp.status_code, status.HTTP_200_OK)
+        self.assertTrue(claim_resp.data["is_bingo"])
+        self.assertEqual(claim_resp.data["pattern"], "column")
+
     def test_claim_preview_can_skip_immediate_ban(self):
         headers = self.auth_headers()
         payload = {

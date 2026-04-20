@@ -45,7 +45,7 @@ from .serializers import (
 
 ALLOWED_GAME_STATUS_FILTERS = {choice[0] for choice in Game.Status.choices}
 ALLOWED_TX_TYPE_FILTERS = {choice[0] for choice in Transaction.Type.choices}
-ALLOWED_CLAIM_PATTERNS = {"row", "diagonal"}
+ALLOWED_CLAIM_PATTERNS = {"row", "column", "diagonal"}
 
 
 def _normalize_cartella_board(board: list[int] | tuple[int, ...] | None) -> list[int] | None:
@@ -153,6 +153,12 @@ def _board_matches_pattern(
     if normalized == "row":
         return any(all(is_marked(value) for value in row) for row in grid)
 
+    if normalized == "column":
+        return any(
+            all(is_marked(grid[row][column]) for row in range(5))
+            for column in range(5)
+        )
+
     if normalized == "diagonal":
         main = all(is_marked(grid[idx][idx]) for idx in range(5))
         anti = all(is_marked(grid[idx][4 - idx]) for idx in range(5))
@@ -162,7 +168,7 @@ def _board_matches_pattern(
 
 
 def _detect_winning_pattern(board: list[int], called_set: set[int]) -> str | None:
-    for candidate in ("row", "diagonal"):
+    for candidate in ("row", "column", "diagonal"):
         if _board_matches_pattern(board, called_set, candidate):
             return candidate
     return None
@@ -745,7 +751,7 @@ class GameClaimView(APIView):
 
             if pattern and pattern not in ALLOWED_CLAIM_PATTERNS:
                 return Response(
-                    {"detail": "pattern must be one of: row, diagonal"},
+                    {"detail": "pattern must be one of: row, column, diagonal"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -844,7 +850,7 @@ class GameClaimView(APIView):
                             "cartella_statuses": cartella_statuses,
                             "status": game.status,
                             "called_numbers": called_numbers_sequence,
-                            "detail": "No bingo yet (row or diagonal only). Ban this cartella only if you confirm.",
+                            "detail": "No bingo yet (row, column, or diagonal only). Ban this cartella only if you confirm.",
                         },
                         status=status.HTTP_200_OK,
                     )
