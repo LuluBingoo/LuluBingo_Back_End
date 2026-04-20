@@ -36,6 +36,7 @@ class Game(models.Model):
     shop_players_data = models.JSONField(default=list, blank=True)
     min_bet_per_cartella = models.DecimalField(max_digits=12, decimal_places=2, default=10)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    is_paused = models.BooleanField(default=False)
     winners = models.JSONField(default=list, blank=True)  # indices of winning cartella(s)
     banned_cartellas = models.JSONField(default=list, blank=True)  # banned cartella indexes
     cartella_statuses = models.JSONField(default=dict, blank=True)  # cartella index -> active|banned|winner

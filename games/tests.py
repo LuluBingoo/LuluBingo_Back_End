@@ -568,3 +568,207 @@ class GameTests(APITestCase):
         state_resp = self.client.get(reverse("game-state", args=[code]), **headers)
         self.assertEqual(state_resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(state_resp.data["called_numbers"]), 2)
+
+    def test_shop_session_allows_more_than_fixed_players(self):
+        headers = self.auth_headers()
+        session_resp = self.client.post(
+            reverse("shop-mode-session-create"),
+            {
+                "min_bet_per_cartella": "20.00",
+                "fixed_players": 2,
+            },
+            format="json",
+            **headers,
+        )
+        self.assertEqual(session_resp.status_code, status.HTTP_201_CREATED)
+        session_id = session_resp.data["session_id"]
+
+        for player_name, cartellas in [
+            ("Player 1", [1]),
+            ("Player 2", [2]),
+            ("Player 3", [3]),
+        ]:
+            reserve_resp = self.client.post(
+                reverse("shop-mode-session-reserve", args=[session_id]),
+                {
+                    "player_name": player_name,
+                    "cartella_numbers": cartellas,
+                    "bet_per_cartella": "20.00",
+                },
+                format="json",
+                **headers,
+            )
+            self.assertEqual(reserve_resp.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(len(reserve_resp.data["players_data"]), 3)
+
+    def test_create_game_does_not_require_fixed_player_count(self):
+        headers = self.auth_headers()
+        session_resp = self.client.post(
+            reverse("shop-mode-session-create"),
+            {
+                "min_bet_per_cartella": "20.00",
+                "fixed_players": 4,
+            },
+            format="json",
+            **headers,
+        )
+        self.assertEqual(session_resp.status_code, status.HTTP_201_CREATED)
+        session_id = session_resp.data["session_id"]
+
+        for player_name, cartellas in [
+            ("Player 1", [1, 2]),
+            ("Player 2", [3, 4]),
+        ]:
+            reserve_resp = self.client.post(
+                reverse("shop-mode-session-reserve", args=[session_id]),
+                {
+                    "player_name": player_name,
+                    "cartella_numbers": cartellas,
+                    "bet_per_cartella": "20.00",
+                },
+                format="json",
+                **headers,
+            )
+            self.assertEqual(reserve_resp.status_code, status.HTTP_200_OK)
+
+        create_resp = self.client.post(
+            reverse("shop-mode-session-create-game", args=[session_id]),
+            {},
+            format="json",
+            **headers,
+        )
+        self.assertEqual(create_resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(create_resp.data["game"]["num_players"], 2)
+
+    def test_add_player_requires_paused_game(self):
+        headers = self.auth_headers()
+        session_resp = self.client.post(
+            reverse("shop-mode-session-create"),
+            {
+                "min_bet_per_cartella": "20.00",
+                "play_mode": ShopBingoSession.PlayMode.OFFLINE,
+            },
+            format="json",
+            **headers,
+        )
+        self.assertEqual(session_resp.status_code, status.HTTP_201_CREATED)
+        session_id = session_resp.data["session_id"]
+
+        for player_name, cartellas in [
+            ("Player 1", [1]),
+            ("Player 2", [2]),
+        ]:
+            reserve_resp = self.client.post(
+                reverse("shop-mode-session-reserve", args=[session_id]),
+                {
+                    "player_name": player_name,
+                    "cartella_numbers": cartellas,
+                    "bet_per_cartella": "20.00",
+                },
+                format="json",
+                **headers,
+            )
+            self.assertEqual(reserve_resp.status_code, status.HTTP_200_OK)
+
+        create_resp = self.client.post(
+            reverse("shop-mode-session-create-game", args=[session_id]),
+            {},
+            format="json",
+            **headers,
+        )
+        self.assertEqual(create_resp.status_code, status.HTTP_200_OK)
+        code = create_resp.data["game"]["game_code"]
+
+        start_resp = self.client.post(reverse("game-start", args=[code]), {}, format="json", **headers)
+        self.assertEqual(start_resp.status_code, status.HTTP_200_OK)
+
+        add_resp = self.client.post(
+            reverse("game-add-player", args=[code]),
+            {
+                "player_name": "Late Player",
+                "cartella_numbers": [3],
+                "bet_per_cartella": "20.00",
+            },
+            format="json",
+            **headers,
+        )
+        self.assertEqual(add_resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_add_player_while_paused_updates_game_and_session(self):
+        headers = self.auth_headers()
+        session_resp = self.client.post(
+            reverse("shop-mode-session-create"),
+            {
+                "min_bet_per_cartella": "20.00",
+                "play_mode": ShopBingoSession.PlayMode.OFFLINE,
+            },
+            format="json",
+            **headers,
+        )
+        self.assertEqual(session_resp.status_code, status.HTTP_201_CREATED)
+        session_id = session_resp.data["session_id"]
+
+        for player_name, cartellas in [
+            ("Player 1", [1]),
+            ("Player 2", [2]),
+        ]:
+            reserve_resp = self.client.post(
+                reverse("shop-mode-session-reserve", args=[session_id]),
+                {
+                    "player_name": player_name,
+                    "cartella_numbers": cartellas,
+                    "bet_per_cartella": "20.00",
+                },
+                format="json",
+                **headers,
+            )
+            self.assertEqual(reserve_resp.status_code, status.HTTP_200_OK)
+
+        create_resp = self.client.post(
+            reverse("shop-mode-session-create-game", args=[session_id]),
+            {},
+            format="json",
+            **headers,
+        )
+        self.assertEqual(create_resp.status_code, status.HTTP_200_OK)
+        code = create_resp.data["game"]["game_code"]
+
+        start_resp = self.client.post(reverse("game-start", args=[code]), {}, format="json", **headers)
+        self.assertEqual(start_resp.status_code, status.HTTP_200_OK)
+
+        pause_resp = self.client.post(
+            reverse("game-pause", args=[code]),
+            {"paused": True},
+            format="json",
+            **headers,
+        )
+        self.assertEqual(pause_resp.status_code, status.HTTP_200_OK)
+        self.assertTrue(pause_resp.data["is_paused"])
+
+        add_resp = self.client.post(
+            reverse("game-add-player", args=[code]),
+            {
+                "player_name": "Late Player",
+                "cartella_numbers": [3, 4],
+                "bet_per_cartella": "20.00",
+            },
+            format="json",
+            **headers,
+        )
+        self.assertEqual(add_resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(add_resp.data["num_players"], 3)
+        self.assertEqual(add_resp.data["total_pool"], "80.00")
+        self.assertEqual(add_resp.data["win_amount"], "80.00")
+        self.assertIn("3", add_resp.data["cartella_number_map"])
+        self.assertIn("4", add_resp.data["cartella_number_map"])
+
+        state_resp = self.client.get(reverse("game-state", args=[code]), **headers)
+        self.assertEqual(state_resp.status_code, status.HTTP_200_OK)
+        self.assertTrue(state_resp.data["is_paused"])
+
+        session = ShopBingoSession.objects.get(session_id=session_id)
+        self.assertEqual(len(session.players_data), 3)
+        self.assertEqual(str(session.total_payable), "80.00")
+        self.assertIn(3, session.locked_cartellas)
+        self.assertIn(4, session.locked_cartellas)

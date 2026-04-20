@@ -81,6 +81,7 @@ class GameSerializer(serializers.ModelSerializer):
             "current_called_number",
             "shop_players_data",
             "status",
+            "is_paused",
             "winners",
             "banned_cartellas",
             "cartella_statuses",
@@ -254,11 +255,13 @@ class GameCompleteSerializer(serializers.ModelSerializer):
                 instance.payout_credited_at = timezone.now()
 
             instance.status = status_value
+            instance.is_paused = False
             instance.winners = winners
             instance.ended_at = instance.ended_at or timezone.now()
             instance.save(
                 update_fields=[
                     "status",
+                    "is_paused",
                     "winners",
                     "ended_at",
                     "total_pool",
@@ -382,9 +385,20 @@ class DetailResponseSerializer(serializers.Serializer):
     detail = serializers.CharField()
 
 
+class GamePauseSerializer(serializers.Serializer):
+    paused = serializers.BooleanField()
+
+
+class GamePauseResponseSerializer(serializers.Serializer):
+    game_code = serializers.CharField()
+    status = serializers.ChoiceField(choices=Game.Status.choices)
+    is_paused = serializers.BooleanField()
+
+
 class GameStateResponseSerializer(serializers.Serializer):
     game_code = serializers.CharField()
     status = serializers.ChoiceField(choices=Game.Status.choices)
+    is_paused = serializers.BooleanField()
     started_at = serializers.DateTimeField(allow_null=True)
     call_cursor = serializers.IntegerField()
     current_called_number = serializers.IntegerField(allow_null=True)
