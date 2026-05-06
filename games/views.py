@@ -151,17 +151,29 @@ def _board_matches_pattern(
     grid = [normalized_board[row * 5 : (row + 1) * 5] for row in range(5)]
 
     if normalized == "row":
-        return any(all(is_marked(value) for value in row) for row in grid)
+        for row_idx, row in enumerate(grid):
+            if all(is_marked(value) for value in row):
+                print(f"✓ ROW {row_idx + 1} WIN: {row}")
+                return True
+        return False
 
     if normalized == "column":
-        return any(
-            all(is_marked(grid[row][column]) for row in range(5))
-            for column in range(5)
-        )
+        for column in range(5):
+            col_values = [grid[row][column] for row in range(5)]
+            if all(is_marked(grid[row][column]) for row in range(5)):
+                print(f"✓ COLUMN {column + 1} WIN: {col_values}")
+                return True
+        return False
 
     if normalized == "diagonal":
+        main_diag = [grid[idx][idx] for idx in range(5)]
+        anti_diag = [grid[idx][4 - idx] for idx in range(5)]
         main = all(is_marked(grid[idx][idx]) for idx in range(5))
         anti = all(is_marked(grid[idx][4 - idx]) for idx in range(5))
+        if main:
+            print(f"✓ MAIN DIAGONAL WIN: {main_diag}")
+        if anti:
+            print(f"✓ ANTI DIAGONAL WIN: {anti_diag}")
         return main or anti
 
     return False
@@ -868,7 +880,7 @@ class GameClaimView(APIView):
                             "cartella_statuses": cartella_statuses,
                             "status": game.status,
                             "called_numbers": called_numbers_sequence,
-                            "detail": "No bingo yet (row, column, or diagonal only). Ban this cartella only if you confirm.",
+                            "detail": f"No bingo yet. Checked {len(called_numbers)} numbers. Need complete row, column, or diagonal.",
                         },
                         status=status.HTTP_200_OK,
                     )
