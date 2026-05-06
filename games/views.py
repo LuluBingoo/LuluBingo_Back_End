@@ -153,27 +153,18 @@ def _board_matches_pattern(
     if normalized == "row":
         for row_idx, row in enumerate(grid):
             if all(is_marked(value) for value in row):
-                print(f"✓ ROW {row_idx + 1} WIN: {row}")
                 return True
         return False
 
     if normalized == "column":
         for column in range(5):
-            col_values = [grid[row][column] for row in range(5)]
             if all(is_marked(grid[row][column]) for row in range(5)):
-                print(f"✓ COLUMN {column + 1} WIN: {col_values}")
                 return True
         return False
 
     if normalized == "diagonal":
-        main_diag = [grid[idx][idx] for idx in range(5)]
-        anti_diag = [grid[idx][4 - idx] for idx in range(5)]
         main = all(is_marked(grid[idx][idx]) for idx in range(5))
         anti = all(is_marked(grid[idx][4 - idx]) for idx in range(5))
-        if main:
-            print(f"✓ MAIN DIAGONAL WIN: {main_diag}")
-        if anti:
-            print(f"✓ ANTI DIAGONAL WIN: {anti_diag}")
         return main or anti
 
     return False
@@ -740,258 +731,268 @@ class GameClaimView(APIView):
         tags=["Games"],
     )
     def post(self, request, code: str):
-        with db_transaction.atomic():
-            game = get_object_or_404(Game.objects.select_for_update(), game_code=code, shop=request.user)
+        try:
+            with db_transaction.atomic():
+                game = get_object_or_404(Game.objects.select_for_update(), game_code=code, shop=request.user)
 
-            cartella_index = request.data.get("cartella_index")
-            pattern_raw = request.data.get("pattern")
-            pattern = str(pattern_raw).strip().lower() if pattern_raw is not None else ""
-            ban_on_false_claim_raw = request.data.get("ban_on_false_claim", True)
-            if isinstance(ban_on_false_claim_raw, bool):
-                ban_on_false_claim = ban_on_false_claim_raw
-            elif isinstance(ban_on_false_claim_raw, str):
-                ban_on_false_claim = ban_on_false_claim_raw.strip().lower() in {
-                    "1",
-                    "true",
-                    "yes",
-                    "on",
-                }
-            else:
-                ban_on_false_claim = bool(ban_on_false_claim_raw)
+                cartella_index = request.data.get("cartella_index")
+                pattern_raw = request.data.get("pattern")
+                pattern = str(pattern_raw).strip().lower() if pattern_raw is not None else ""
+                ban_on_false_claim_raw = request.data.get("ban_on_false_claim", True)
+                if isinstance(ban_on_false_claim_raw, bool):
+                    ban_on_false_claim = ban_on_false_claim_raw
+                elif isinstance(ban_on_false_claim_raw, str):
+                    ban_on_false_claim = ban_on_false_claim_raw.strip().lower() in {
+                        "1",
+                        "true",
+                        "yes",
+                        "on",
+                    }
+                else:
+                    ban_on_false_claim = bool(ban_on_false_claim_raw)
 
-            if game.status != Game.Status.ACTIVE:
-                return Response(
-                    {"detail": "Claims are only allowed for active games"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            try:
-                cartella_index = int(cartella_index)
-            except (TypeError, ValueError):
-                return Response(
-                    {"detail": "cartella_index must be an integer"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            if cartella_index < 0 or cartella_index >= len(game.cartella_numbers):
-                return Response(
-                    {"detail": "Cartella index out of range"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            if pattern and pattern not in ALLOWED_CLAIM_PATTERNS:
-                return Response(
-                    {"detail": "pattern must be one of: row, column, diagonal"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            request_called_numbers = request.data.get("called_numbers")
-            called_numbers_sequence: list[int] | None = None
-            if request_called_numbers is not None:
-                if not isinstance(request_called_numbers, list) or not request_called_numbers:
+                if game.status != Game.Status.ACTIVE:
                     return Response(
-                        {"detail": "called_numbers must be a non-empty list when provided"},
+                        {"detail": "Claims are only allowed for active games"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-                seen_numbers: set[int] = set()
-                parsed_called_numbers: list[int] = []
-                for raw_value in request_called_numbers:
-                    try:
-                        called_number = int(raw_value)
-                    except (TypeError, ValueError):
-                        return Response(
-                            {"detail": "called_numbers must contain only integers between 1 and 75"},
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
-
-                    if called_number < 1 or called_number > 75:
-                        return Response(
-                            {"detail": "called_numbers must contain only integers between 1 and 75"},
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
-
-                    if called_number in seen_numbers:
-                        continue
-
-                    seen_numbers.add(called_number)
-                    parsed_called_numbers.append(called_number)
-
-                called_numbers_sequence = parsed_called_numbers
-
-            cartella_statuses = _ensure_cartella_statuses(game)
-
-            banned = set(game.banned_cartellas or [])
-            if cartella_index in banned:
-                cartella_statuses[str(cartella_index)] = "banned"
-                game.cartella_statuses = cartella_statuses
-                game.save(update_fields=["cartella_statuses"])
-                return Response(
-                    {
-                        "game_code": game.game_code,
-                        "cartella_index": cartella_index,
-                        "is_bingo": False,
-                        "is_banned": True,
-                        "cartella_status": "banned",
-                        "cartella_statuses": cartella_statuses,
-                        "status": game.status,
-                        "detail": "Banned.",
-                    },
-                    status=status.HTTP_200_OK,
-                )
-
-            called_numbers_sequence = called_numbers_sequence or list(game.called_numbers or [])
-            called_numbers = set(called_numbers_sequence)
-            board = _normalize_cartella_board(game.cartella_numbers[cartella_index])
-            if board is None:
-                return Response(
-                    {"detail": "Cartella board data is invalid"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            detected_pattern = _detect_winning_pattern(board, called_numbers)
-            selected_pattern = pattern or detected_pattern or "row"
-            is_winner = bool(detected_pattern) if not pattern else _board_matches_pattern(board, called_numbers, pattern)
-
-            claim_log = list(game.awarded_claims or [])
-            claim_event = {
-                "cartella_index": cartella_index,
-                "pattern": selected_pattern,
-                "called_count": len(called_numbers),
-                "time": timezone.now().isoformat(),
-                "result": "win" if is_winner else "false_claim",
-            }
-
-            if not is_winner:
-                if not ban_on_false_claim:
-                    cartella_statuses[str(cartella_index)] = cartella_statuses.get(
-                        str(cartella_index), "active"
+                try:
+                    cartella_index = int(cartella_index)
+                except (TypeError, ValueError):
+                    return Response(
+                        {"detail": "cartella_index must be an integer"},
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
+
+                if cartella_index < 0 or cartella_index >= len(game.cartella_numbers):
+                    return Response(
+                        {"detail": "Cartella index out of range"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                if pattern and pattern not in ALLOWED_CLAIM_PATTERNS:
+                    return Response(
+                        {"detail": "pattern must be one of: row, column, diagonal"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                request_called_numbers = request.data.get("called_numbers")
+                called_numbers_sequence: list[int] | None = None
+                if request_called_numbers is not None:
+                    if not isinstance(request_called_numbers, list) or not request_called_numbers:
+                        return Response(
+                            {"detail": "called_numbers must be a non-empty list when provided"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    seen_numbers: set[int] = set()
+                    parsed_called_numbers: list[int] = []
+                    for raw_value in request_called_numbers:
+                        try:
+                            called_number = int(raw_value)
+                        except (TypeError, ValueError):
+                            return Response(
+                                {"detail": "called_numbers must contain only integers between 1 and 75"},
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
+
+                        if called_number < 1 or called_number > 75:
+                            return Response(
+                                {"detail": "called_numbers must contain only integers between 1 and 75"},
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
+
+                        if called_number in seen_numbers:
+                            continue
+
+                        seen_numbers.add(called_number)
+                        parsed_called_numbers.append(called_number)
+
+                    called_numbers_sequence = parsed_called_numbers
+
+                cartella_statuses = _ensure_cartella_statuses(game)
+
+                banned = set(game.banned_cartellas or [])
+                if cartella_index in banned:
+                    cartella_statuses[str(cartella_index)] = "banned"
+                    game.cartella_statuses = cartella_statuses
+                    game.save(update_fields=["cartella_statuses"])
+                    return Response(
+                        {
+                            "game_code": game.game_code,
+                            "cartella_index": cartella_index,
+                            "is_bingo": False,
+                            "is_banned": True,
+                            "cartella_status": "banned",
+                            "cartella_statuses": cartella_statuses,
+                            "status": game.status,
+                            "detail": "Banned.",
+                        },
+                        status=status.HTTP_200_OK,
+                    )
+
+                called_numbers_sequence = called_numbers_sequence or list(game.called_numbers or [])
+                called_numbers = set(called_numbers_sequence)
+                board = _normalize_cartella_board(game.cartella_numbers[cartella_index])
+                if board is None:
+                    return Response(
+                        {"detail": "Cartella board data is invalid"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                detected_pattern = _detect_winning_pattern(board, called_numbers)
+                selected_pattern = pattern or detected_pattern or "row"
+                is_winner = bool(detected_pattern) if not pattern else _board_matches_pattern(board, called_numbers, pattern)
+
+                claim_log = list(game.awarded_claims or [])
+                claim_event = {
+                    "cartella_index": cartella_index,
+                    "pattern": selected_pattern,
+                    "called_count": len(called_numbers),
+                    "time": timezone.now().isoformat(),
+                    "result": "win" if is_winner else "false_claim",
+                }
+
+                if not is_winner:
+                    if not ban_on_false_claim:
+                        cartella_statuses[str(cartella_index)] = cartella_statuses.get(
+                            str(cartella_index), "active"
+                        )
+                        return Response(
+                            {
+                                "game_code": game.game_code,
+                                "cartella_index": cartella_index,
+                                "pattern": selected_pattern,
+                                "is_bingo": False,
+                                "is_banned": False,
+                                "would_ban": True,
+                                "cartella_status": cartella_statuses.get(
+                                    str(cartella_index), "active"
+                                ),
+                                "cartella_statuses": cartella_statuses,
+                                "status": game.status,
+                                "called_numbers": called_numbers_sequence,
+                                "detail": f"No bingo yet. Checked {len(called_numbers)} numbers. Need complete row, column, or diagonal.",
+                            },
+                            status=status.HTTP_200_OK,
+                        )
+
+                    banned.add(cartella_index)
+                    game.banned_cartellas = sorted(banned)
+                    cartella_statuses[str(cartella_index)] = "banned"
+                    game.cartella_statuses = cartella_statuses
+                    claim_log.append(claim_event)
+                    game.awarded_claims = claim_log
+                    game.save(update_fields=["banned_cartellas", "cartella_statuses", "awarded_claims"])
+
                     return Response(
                         {
                             "game_code": game.game_code,
                             "cartella_index": cartella_index,
                             "pattern": selected_pattern,
                             "is_bingo": False,
-                            "is_banned": False,
-                            "would_ban": True,
-                            "cartella_status": cartella_statuses.get(
-                                str(cartella_index), "active"
-                            ),
+                            "is_banned": True,
+                            "cartella_status": "banned",
                             "cartella_statuses": cartella_statuses,
                             "status": game.status,
                             "called_numbers": called_numbers_sequence,
-                            "detail": f"No bingo yet. Checked {len(called_numbers)} numbers. Need complete row, column, or diagonal.",
+                            "detail": "Banned.",
                         },
                         status=status.HTTP_200_OK,
                     )
 
-                banned.add(cartella_index)
-                game.banned_cartellas = sorted(banned)
-                cartella_statuses[str(cartella_index)] = "banned"
-                game.cartella_statuses = cartella_statuses
+                total_pool, payout_amount, shop_cut, lulu_cut, shop_net_cut = _resolve_game_financials(game)
+
+                if lulu_cut > 0:
+                    apply_transaction(
+                        user=game.shop,
+                        amount=lulu_cut,
+                        tx_type=Transaction.Type.LULU_CUT_DEBIT,
+                        reference=f"game:{game.game_code}:lulu_cut",
+                        metadata={
+                            "event": "bingo_lulu_cut_debit",
+                            "game_id": game.game_code,
+                            "total_pool": str(total_pool),
+                            "shop_cut": str(shop_cut),
+                            "lulu_cut_percentage": str(game.lulu_cut_percentage),
+                            "lulu_cut": str(lulu_cut),
+                            "shop_net_cut": str(shop_net_cut),
+                            "winner_cartella_index": cartella_index,
+                            "pattern": selected_pattern,
+                        },
+                    )
+
+                claim_event.update(
+                    {
+                        "total_pool": str(total_pool),
+                        "payout_amount": str(payout_amount),
+                        "shop_cut_amount": str(shop_cut),
+                        "lulu_cut_amount": str(lulu_cut),
+                        "shop_net_cut_amount": str(shop_net_cut),
+                    }
+                )
                 claim_log.append(claim_event)
+
+                game.status = Game.Status.COMPLETED
+                game.winners = [cartella_index]
+                cartella_statuses[str(cartella_index)] = "winner"
+                game.cartella_statuses = cartella_statuses
+                game.winning_pattern = selected_pattern
+                game.total_pool = total_pool
+                game.cut_percentage = game.cut_percentage if game.cut_percentage is not None else Decimal("10")
+                game.payout_amount = payout_amount
+                game.shop_cut_amount = shop_cut
+                game.lulu_cut_amount = lulu_cut
+                game.shop_net_cut_amount = shop_net_cut
+                game.ended_at = game.ended_at or timezone.now()
                 game.awarded_claims = claim_log
-                game.save(update_fields=["banned_cartellas", "cartella_statuses", "awarded_claims"])
+                game.call_cursor = len(game.draw_sequence)
+                game.save(
+                    update_fields=[
+                        "status",
+                        "winners",
+                        "cartella_statuses",
+                        "winning_pattern",
+                        "total_pool",
+                        "cut_percentage",
+                        "payout_amount",
+                        "shop_cut_amount",
+                        "lulu_cut_amount",
+                        "shop_net_cut_amount",
+                        "ended_at",
+                        "awarded_claims",
+                        "call_cursor",
+                    ]
+                )
 
                 return Response(
                     {
                         "game_code": game.game_code,
                         "cartella_index": cartella_index,
                         "pattern": selected_pattern,
-                        "is_bingo": False,
-                        "is_banned": True,
-                        "cartella_status": "banned",
+                        "is_bingo": True,
+                        "is_banned": False,
+                        "cartella_status": "winner",
                         "cartella_statuses": cartella_statuses,
                         "status": game.status,
-                        "called_numbers": called_numbers_sequence,
-                        "detail": "Banned.",
+                        "winner": cartella_index,
+                        "total_pool": str(total_pool),
+                        "payout_amount": str(payout_amount),
+                        "shop_cut_amount": str(shop_cut),
+                        "lulu_cut_amount": str(lulu_cut),
+                        "shop_net_cut_amount": str(shop_net_cut),
+                        "detail": "Bingo confirmed. Game completed.",
                     },
                     status=status.HTTP_200_OK,
                 )
-
-            total_pool, payout_amount, shop_cut, lulu_cut, shop_net_cut = _resolve_game_financials(game)
-
-            if lulu_cut > 0:
-                apply_transaction(
-                    user=game.shop,
-                    amount=lulu_cut,
-                    tx_type=Transaction.Type.LULU_CUT_DEBIT,
-                    reference=f"game:{game.game_code}:lulu_cut",
-                    metadata={
-                        "event": "bingo_lulu_cut_debit",
-                        "game_id": game.game_code,
-                        "total_pool": str(total_pool),
-                        "shop_cut": str(shop_cut),
-                        "lulu_cut_percentage": str(game.lulu_cut_percentage),
-                        "lulu_cut": str(lulu_cut),
-                        "shop_net_cut": str(shop_net_cut),
-                        "winner_cartella_index": cartella_index,
-                        "pattern": selected_pattern,
-                    },
-                )
-
-            claim_event.update(
-                {
-                    "total_pool": str(total_pool),
-                    "payout_amount": str(payout_amount),
-                    "shop_cut_amount": str(shop_cut),
-                    "lulu_cut_amount": str(lulu_cut),
-                    "shop_net_cut_amount": str(shop_net_cut),
-                }
-            )
-            claim_log.append(claim_event)
-
-            game.status = Game.Status.COMPLETED
-            game.winners = [cartella_index]
-            cartella_statuses[str(cartella_index)] = "winner"
-            game.cartella_statuses = cartella_statuses
-            game.winning_pattern = selected_pattern
-            game.total_pool = total_pool
-            game.cut_percentage = game.cut_percentage if game.cut_percentage is not None else Decimal("10")
-            game.payout_amount = payout_amount
-            game.shop_cut_amount = shop_cut
-            game.lulu_cut_amount = lulu_cut
-            game.shop_net_cut_amount = shop_net_cut
-            game.ended_at = game.ended_at or timezone.now()
-            game.awarded_claims = claim_log
-            game.call_cursor = len(game.draw_sequence)
-            game.save(
-                update_fields=[
-                    "status",
-                    "winners",
-                    "cartella_statuses",
-                    "winning_pattern",
-                    "total_pool",
-                    "cut_percentage",
-                    "payout_amount",
-                    "shop_cut_amount",
-                    "lulu_cut_amount",
-                    "shop_net_cut_amount",
-                    "ended_at",
-                    "awarded_claims",
-                    "call_cursor",
-                ]
-            )
-
+        except Exception as e:
+            import traceback
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"GameClaimView error: {str(e)}\n{traceback.format_exc()}")
             return Response(
-                {
-                    "game_code": game.game_code,
-                    "cartella_index": cartella_index,
-                    "pattern": selected_pattern,
-                    "is_bingo": True,
-                    "is_banned": False,
-                    "cartella_status": "winner",
-                    "cartella_statuses": cartella_statuses,
-                    "status": game.status,
-                    "winner": cartella_index,
-                    "total_pool": str(total_pool),
-                    "payout_amount": str(payout_amount),
-                    "shop_cut_amount": str(shop_cut),
-                    "lulu_cut_amount": str(lulu_cut),
-                    "shop_net_cut_amount": str(shop_net_cut),
-                    "detail": "Bingo confirmed. Game completed.",
-                },
-                status=status.HTTP_200_OK,
+                {"detail": f"Internal server error during claim validation: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
