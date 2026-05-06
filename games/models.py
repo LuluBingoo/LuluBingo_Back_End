@@ -35,6 +35,7 @@ class Game(models.Model):
     cartella_number_map = models.JSONField(default=dict, blank=True)  # cartellaNumber(string)->index
     shop_players_data = models.JSONField(default=list, blank=True)
     min_bet_per_cartella = models.DecimalField(max_digits=12, decimal_places=2, default=10)
+    board_configuration = models.JSONField(default=dict, blank=True, help_text="Shuffled board configuration for B, I, N, G, O columns")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     is_paused = models.BooleanField(default=False)
     winners = models.JSONField(default=list, blank=True)  # indices of winning cartella(s)

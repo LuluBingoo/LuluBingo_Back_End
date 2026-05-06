@@ -458,6 +458,7 @@ class GameShuffleView(APIView):
                 "called_numbers",
                 "call_cursor",
                 "current_called_number",
+                "board_configuration",
             ),
             game_code=code,
             shop=request.user,
@@ -469,18 +470,35 @@ class GameShuffleView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Get board configuration from request if provided
+        board_config = request.data.get("board_configuration")
+        
         game.draw_sequence = random.sample(range(1, 76), 75)
         game.called_numbers = []
         game.call_cursor = 0
         game.current_called_number = None
-        game.save(
-            update_fields=[
-                "draw_sequence",
-                "called_numbers",
-                "call_cursor",
-                "current_called_number",
-            ]
-        )
+        
+        # Save board configuration if provided
+        if board_config and isinstance(board_config, dict):
+            game.board_configuration = board_config
+            game.save(
+                update_fields=[
+                    "draw_sequence",
+                    "called_numbers",
+                    "call_cursor",
+                    "current_called_number",
+                    "board_configuration",
+                ]
+            )
+        else:
+            game.save(
+                update_fields=[
+                    "draw_sequence",
+                    "called_numbers",
+                    "call_cursor",
+                    "current_called_number",
+                ]
+            )
 
         return Response(
             {
