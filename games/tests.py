@@ -103,6 +103,34 @@ class GameTests(APITestCase):
         self.shop.refresh_from_db()
         self.assertEqual(float(self.shop.wallet_balance), 499.85)
 
+    def test_game_reports_include_correct_winner_labels_and_cuts(self):
+        headers = self.auth_headers()
+        payload = {
+            "bet_amount": "10.00",
+            "num_players": 1,
+            "win_amount": "50.00",
+            "cartella_numbers": [[1, 2, 3]],
+        }
+        create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
+        code = create_resp.data["game_code"]
+
+        self.client.post(
+            reverse("game-complete", args=[code]),
+            {"status": "completed", "winners": [0]},
+            format="json",
+            **headers,
+        )
+
+        reports_resp = self.client.get(reverse("game-reports"), **headers)
+        self.assertEqual(reports_resp.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(reports_resp.data["game_history"][0]["winner"], ["Cartella 1"])
+        self.assertEqual(reports_resp.data["game_history"][0]["lulu_cut"], "0.15")
+        self.assertEqual(reports_resp.data["game_history"][0]["shop_net_cut"], "0.85")
+        self.assertEqual(reports_resp.data["win_history"][0]["winner_labels"], ["Cartella 1"])
+        self.assertEqual(reports_resp.data["win_history"][0]["lulu_cut_amount"], "0.15")
+        self.assertEqual(reports_resp.data["win_history"][0]["shop_net_cut_amount"], "0.85")
+
     def test_cancel_game_refunds_bet(self):
         headers = self.auth_headers()
         payload = {

@@ -1685,40 +1685,40 @@ class GameAuditReportView(APIView):
         if end_dt:
             games = games.filter(created_at__lte=end_dt)
 
-        games = games.values(
-            "game_code",
-            "created_at",
-            "ended_at",
-            "num_players",
-            "total_pool",
-            "shop_cut_amount",
-            "lulu_cut_amount",
-            "shop_net_cut_amount",
-            "status",
-            "winners",
-            "winning_pattern",
-            "payout_amount",
-            "banned_cartellas",
-        ).order_by("-created_at")
+        games = games.order_by("-created_at")
 
         game_history = []
         win_history = []
         banned_list = []
 
         for game in games.iterator(chunk_size=200):
-            winner_indexes = game.get("winners") or []
-            winner_labels = [f"Cartella {idx}" for idx in winner_indexes]
+            game_data = GameSerializer(game).data
+            winner_indexes = game_data.get("winners") or []
+            assigned_numbers = game_data.get("assigned_cartella_numbers") or []
+            winner_labels = []
+            for winner_index in winner_indexes:
+                cartella_number = winner_index + 1
+                if (
+                    isinstance(assigned_numbers, list)
+                    and winner_index >= 0
+                    and winner_index < len(assigned_numbers)
+                ):
+                    try:
+                        cartella_number = int(assigned_numbers[winner_index])
+                    except (TypeError, ValueError):
+                        cartella_number = winner_index + 1
+                winner_labels.append(f"Cartella {cartella_number}")
 
             history_item = {
-                "game_id": game["game_code"],
-                "date": game["created_at"],
-                "players": game["num_players"],
-                "total_pool": str(game["total_pool"]),
+                "game_id": game_data["game_code"],
+                "date": game_data["created_at"],
+                "players": game_data["num_players"],
+                "total_pool": str(game_data["total_pool"]),
                 "winner": winner_labels,
-                "shop_cut": str(game["shop_cut_amount"]),
-                "lulu_cut": str(game.get("lulu_cut_amount") or Decimal("0")),
-                "shop_net_cut": str(game.get("shop_net_cut_amount") or Decimal("0")),
-                "status": game["status"],
+                "shop_cut": str(game_data["shop_cut_amount"]),
+                "lulu_cut": str(game_data.get("lulu_cut_amount") or Decimal("0")),
+                "shop_net_cut": str(game_data.get("shop_net_cut_amount") or Decimal("0")),
+                "status": game_data["status"],
             }
 
             if search:
@@ -1731,24 +1731,29 @@ class GameAuditReportView(APIView):
 
             game_history.append(history_item)
 
-            if game["status"] == Game.Status.COMPLETED and winner_indexes:
+            if game_data["status"] == Game.Status.COMPLETED and winner_indexes:
                 win_history.append(
                     {
-                        "game_id": game["game_code"],
+                        "game_id": game_data["game_code"],
                         "winner_indexes": winner_indexes,
-                        "winning_pattern": game["winning_pattern"],
-                        "payout_amount": str(game["payout_amount"]),
-                        "date": game["ended_at"] or game["created_at"],
+                        "winner_labels": winner_labels,
+                        "winning_pattern": game_data["winning_pattern"],
+                        "total_pool": str(game_data["total_pool"]),
+                        "payout_amount": str(game_data["payout_amount"]),
+                        "shop_cut_amount": str(game_data["shop_cut_amount"]),
+                        "lulu_cut_amount": str(game_data.get("lulu_cut_amount") or Decimal("0")),
+                        "shop_net_cut_amount": str(game_data.get("shop_net_cut_amount") or Decimal("0")),
+                        "date": game_data["ended_at"] or game_data["created_at"],
                     }
                 )
 
-            for banned_idx in game.get("banned_cartellas") or []:
+            for banned_idx in game_data.get("banned_cartellas") or []:
                 banned_list.append(
                     {
-                        "game_id": game["game_code"],
+                        "game_id": game_data["game_code"],
                         "cartella_index": banned_idx,
                         "status": "banned",
-                        "date": game["ended_at"] or game["created_at"],
+                        "date": game_data["ended_at"] or game_data["created_at"],
                     }
                 )
 
