@@ -262,8 +262,6 @@ def _finalize_shop_session(session: ShopBingoSession) -> Game:
         )
 
     all_cartella_numbers = [n for p in players for n in p.get("cartella_numbers", [])]
-    if len(all_cartella_numbers) > 16:
-        raise ValueError("Maximum allowed cartellas is 16")
     if len(set(all_cartella_numbers)) != len(all_cartella_numbers):
         raise ValueError("Duplicate cartella assignment detected")
 
@@ -1121,10 +1119,6 @@ class ShopBingoSessionReserveView(APIView):
                 payload["paid_at"] = players[player_index].get("paid_at")
                 players[player_index] = payload
 
-            total_cartellas = sum(len(player.get("cartella_numbers", [])) for player in players)
-            if total_cartellas > 16:
-                return Response({"detail": "Total cartellas cannot exceed 16"}, status=status.HTTP_400_BAD_REQUEST)
-
             session.players_data = players
             locked, total_payable = _recalculate_session_totals(session)
             session.locked_cartellas = locked
@@ -1353,12 +1347,6 @@ class GameAddPlayerView(APIView):
                 )
 
             existing_cartella_boards = list(game.cartella_numbers or [])
-            existing_cartella_count = len(existing_cartella_boards)
-            if existing_cartella_count + len(cartella_numbers) > 16:
-                return Response(
-                    {"detail": "Total cartellas cannot exceed 16"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
 
             if game.game_mode == Game.Mode.SHOP_OFFLINE:
                 new_cartella_boards: list[list[int]] = []
