@@ -842,10 +842,20 @@ class GameClaimView(APIView):
                 # Debug logging
                 import logging
                 logger = logging.getLogger(__name__)
-                logger.info(f"Checking cartella {cartella_index}")
-                logger.info(f"Board: {board}")
+                logger.info(f"=== Checking cartella {cartella_index} ===")
+                logger.info(f"Board (raw): {board}")
+                
+                # Show board as grid
+                grid = [board[row * 5 : (row + 1) * 5] for row in range(5)]
+                for row_idx, row in enumerate(grid):
+                    logger.info(f"Row {row_idx}: {row}")
+                
                 logger.info(f"Called numbers count: {len(called_numbers)}")
                 logger.info(f"Called numbers: {sorted(called_numbers)}")
+                
+                # Check which numbers in the board are marked
+                marked_in_board = [num for num in board if num == 0 or num in called_numbers]
+                logger.info(f"Marked numbers in board: {marked_in_board} ({len(marked_in_board)}/25)")
                 
                 detected_pattern = _detect_winning_pattern(board, called_numbers)
                 logger.info(f"Detected pattern: {detected_pattern}")
@@ -855,6 +865,14 @@ class GameClaimView(APIView):
                 col_match = _board_matches_pattern(board, called_numbers, "column")
                 diag_match = _board_matches_pattern(board, called_numbers, "diagonal")
                 logger.info(f"Pattern checks - Row: {row_match}, Column: {col_match}, Diagonal: {diag_match}")
+                
+                # Check each column individually
+                for col_idx in range(5):
+                    col_values = [grid[row][col_idx] for row in range(5)]
+                    col_marked = [val == 0 or val in called_numbers for val in col_values]
+                    logger.info(f"Column {col_idx}: {col_values} -> marked: {col_marked} -> all marked: {all(col_marked)}")
+                
+                logger.info(f"=== End check ===")
                 
                 selected_pattern = pattern or detected_pattern or "row"
                 is_winner = bool(detected_pattern) if not pattern else _board_matches_pattern(board, called_numbers, pattern)
