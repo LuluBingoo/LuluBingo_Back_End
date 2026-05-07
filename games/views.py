@@ -838,7 +838,24 @@ class GameClaimView(APIView):
                         {"detail": "Cartella board data is invalid"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
+                
+                # Debug logging
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Checking cartella {cartella_index}")
+                logger.info(f"Board: {board}")
+                logger.info(f"Called numbers count: {len(called_numbers)}")
+                logger.info(f"Called numbers: {sorted(called_numbers)}")
+                
                 detected_pattern = _detect_winning_pattern(board, called_numbers)
+                logger.info(f"Detected pattern: {detected_pattern}")
+                
+                # Check each pattern individually for debugging
+                row_match = _board_matches_pattern(board, called_numbers, "row")
+                col_match = _board_matches_pattern(board, called_numbers, "column")
+                diag_match = _board_matches_pattern(board, called_numbers, "diagonal")
+                logger.info(f"Pattern checks - Row: {row_match}, Column: {col_match}, Diagonal: {diag_match}")
+                
                 selected_pattern = pattern or detected_pattern or "row"
                 is_winner = bool(detected_pattern) if not pattern else _board_matches_pattern(board, called_numbers, pattern)
 
@@ -856,6 +873,12 @@ class GameClaimView(APIView):
                         cartella_statuses[str(cartella_index)] = cartella_statuses.get(
                             str(cartella_index), "active"
                         )
+                        
+                        # Provide detailed feedback about what's missing
+                        detail_parts = [f"No bingo yet. Checked {len(called_numbers)} numbers."]
+                        detail_parts.append(f"Detected pattern: {detected_pattern or 'none'}")
+                        detail_parts.append("Need complete row, column, or diagonal.")
+                        
                         return Response(
                             {
                                 "game_code": game.game_code,
@@ -870,7 +893,14 @@ class GameClaimView(APIView):
                                 "cartella_statuses": cartella_statuses,
                                 "status": game.status,
                                 "called_numbers": called_numbers_sequence,
-                                "detail": f"No bingo yet. Checked {len(called_numbers)} numbers. Need complete row, column, or diagonal.",
+                                "detail": " ".join(detail_parts),
+                                "debug_info": {
+                                    "row_match": row_match,
+                                    "column_match": col_match,
+                                    "diagonal_match": diag_match,
+                                    "board": board,
+                                    "called_count": len(called_numbers),
+                                },
                             },
                             status=status.HTTP_200_OK,
                         )
