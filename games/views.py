@@ -844,18 +844,31 @@ class GameClaimView(APIView):
                 # Apply board configuration shuffle if it exists
                 board = original_board
                 if game.board_configuration and isinstance(game.board_configuration, dict):
-                    # board_configuration maps old index -> new index
-                    # We need to reverse it: new index -> old index
-                    # Then rearrange the board according to the shuffle
+                    # board_configuration stores shuffled columns: {"B": [...], "I": [...], "N": [...], "G": [...], "O": [...]}
+                    # We need to reconstruct the board using the shuffled column order
                     try:
-                        # The board_configuration is stored as {oldIndex: newIndex}
-                        # We need to create a shuffled board where shuffled[newIndex] = original[oldIndex]
-                        shuffled_board = [0] * 25
-                        for old_idx_str, new_idx in game.board_configuration.items():
-                            old_idx = int(old_idx_str)
-                            if 0 <= old_idx < 25 and 0 <= new_idx < 25:
-                                shuffled_board[new_idx] = original_board[old_idx]
-                        board = shuffled_board
+                        b_col = game.board_configuration.get("B", [])
+                        i_col = game.board_configuration.get("I", [])
+                        n_col = game.board_configuration.get("N", [])
+                        g_col = game.board_configuration.get("G", [])
+                        o_col = game.board_configuration.get("O", [])
+                        
+                        if len(b_col) >= 5 and len(i_col) >= 5 and len(n_col) >= 5 and len(g_col) >= 5 and len(o_col) >= 5:
+                            # Reconstruct board in row-major order from shuffled columns
+                            # Row 0: B[0], I[0], N[0], G[0], O[0]
+                            # Row 1: B[1], I[1], N[1], G[1], O[1]
+                            # ...
+                            shuffled_board = []
+                            for row_idx in range(5):
+                                shuffled_board.append(b_col[row_idx])
+                                shuffled_board.append(i_col[row_idx])
+                                shuffled_board.append(n_col[row_idx])
+                                shuffled_board.append(g_col[row_idx])
+                                shuffled_board.append(o_col[row_idx])
+                            
+                            # Ensure center is 0
+                            shuffled_board[12] = 0
+                            board = shuffled_board
                     except (ValueError, KeyError, IndexError) as e:
                         # If shuffle fails, use original board
                         import logging
