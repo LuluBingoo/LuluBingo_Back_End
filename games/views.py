@@ -832,18 +832,44 @@ class GameClaimView(APIView):
 
                 called_numbers_sequence = called_numbers_sequence or list(game.called_numbers or [])
                 called_numbers = set(called_numbers_sequence)
-                board = _normalize_cartella_board(game.cartella_numbers[cartella_index])
-                if board is None:
+                
+                # Get the original board
+                original_board = _normalize_cartella_board(game.cartella_numbers[cartella_index])
+                if original_board is None:
                     return Response(
                         {"detail": "Cartella board data is invalid"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
                 
+                # Apply board configuration shuffle if it exists
+                board = original_board
+                if game.board_configuration and isinstance(game.board_configuration, dict):
+                    # board_configuration maps old index -> new index
+                    # We need to reverse it: new index -> old index
+                    # Then rearrange the board according to the shuffle
+                    try:
+                        # The board_configuration is stored as {oldIndex: newIndex}
+                        # We need to create a shuffled board where shuffled[newIndex] = original[oldIndex]
+                        shuffled_board = [0] * 25
+                        for old_idx_str, new_idx in game.board_configuration.items():
+                            old_idx = int(old_idx_str)
+                            if 0 <= old_idx < 25 and 0 <= new_idx < 25:
+                                shuffled_board[new_idx] = original_board[old_idx]
+                        board = shuffled_board
+                    except (ValueError, KeyError, IndexError) as e:
+                        # If shuffle fails, use original board
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.warning(f"Failed to apply board shuffle: {e}")
+                        board = original_board
+                
                 # Debug logging
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.info(f"=== Checking cartella {cartella_index} ===")
-                logger.info(f"Board (raw): {board}")
+                logger.info(f"Original board: {original_board}")
+                logger.info(f"Board configuration: {game.board_configuration}")
+                logger.info(f"Shuffled board: {board}")
                 
                 # Show board as grid
                 grid = [board[row * 5 : (row + 1) * 5] for row in range(5)]
