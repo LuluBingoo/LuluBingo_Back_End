@@ -841,41 +841,14 @@ class GameClaimView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
                 
-                # Apply board configuration shuffle if it exists
+                # The board configuration is for the master UI caller board, NOT the 5x5 cartella!
+                # We should strictly use the original generated cartella board.
                 board = original_board
-                if game.board_configuration and isinstance(game.board_configuration, dict):
-                    # board_configuration stores shuffled columns: {"B": [...], "I": [...], "N": [...], "G": [...], "O": [...]}
-                    # We need to reconstruct the board using the shuffled column order
-                    try:
-                        b_col = game.board_configuration.get("B", [])
-                        i_col = game.board_configuration.get("I", [])
-                        n_col = game.board_configuration.get("N", [])
-                        g_col = game.board_configuration.get("G", [])
-                        o_col = game.board_configuration.get("O", [])
-                        
-                        if len(b_col) >= 5 and len(i_col) >= 5 and len(n_col) >= 5 and len(g_col) >= 5 and len(o_col) >= 5:
-                            # Reconstruct board in row-major order from shuffled columns
-                            # Row 0: B[0], I[0], N[0], G[0], O[0]
-                            # Row 1: B[1], I[1], N[1], G[1], O[1]
-                            # ...
-                            shuffled_board = []
-                            for row_idx in range(5):
-                                shuffled_board.append(b_col[row_idx])
-                                shuffled_board.append(i_col[row_idx])
-                                shuffled_board.append(n_col[row_idx])
-                                shuffled_board.append(g_col[row_idx])
-                                shuffled_board.append(o_col[row_idx])
-                            
-                            # Ensure center is 0
-                            shuffled_board[12] = 0
-                            board = shuffled_board
-                    except (ValueError, KeyError, IndexError) as e:
-                        # If shuffle fails, use original board
-                        import logging
-                        logger = logging.getLogger(__name__)
-                        logger.warning(f"Failed to apply board shuffle: {e}")
-                        board = original_board
                 
+                # Check for explicit frontend verification forcing the win (as requested)
+                is_frontend_verified = str(request.data.get("frontend_verified", "")).lower() == "true"
+                frontend_pattern = str(request.data.get("frontend_pattern", "")).lower()
+
                 # Debug logging
                 import logging
                 logger = logging.getLogger(__name__)
@@ -897,6 +870,11 @@ class GameClaimView(APIView):
                 logger.info(f"Marked numbers in board: {marked_in_board} ({len(marked_in_board)}/25)")
                 
                 detected_pattern = _detect_winning_pattern(board, called_numbers)
+                
+                if is_frontend_verified and not detected_pattern:
+                    logger.info(f"Frontend forced win for pattern: {frontend_pattern}")
+                    detected_pattern = frontend_pattern if frontend_pattern else "frontend_forced"
+
                 logger.info(f"Detected pattern: {detected_pattern}")
                 
                 # Check each pattern individually for debugging
