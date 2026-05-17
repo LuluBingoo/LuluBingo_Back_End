@@ -169,11 +169,13 @@ class GameTests(APITestCase):
 
     def test_public_cartella_draw(self):
         headers = self.auth_headers()
+        board1 = list(range(1, 26))
+        board2 = list(range(26, 51))
         payload = {
             "bet_amount": "10.00",
             "num_players": 1,
             "win_amount": "50.00",
-            "cartella_numbers": [[1, 2, 3], [4, 5, 6]],
+            "cartella_numbers": [board1, board2],
         }
         create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
         code = create_resp.data["game_code"]
@@ -186,16 +188,20 @@ class GameTests(APITestCase):
         self.assertEqual(cartella_resp.status_code, status.HTTP_200_OK)
         self.assertEqual(cartella_resp.data["requested_cartella_numbers"], [2])
         self.assertEqual(cartella_resp.data["cartellas"][0]["cartella_number"], 2)
-        self.assertEqual(cartella_resp.data["cartellas"][0]["cartella_numbers"], [4, 5, 6])
+        expected_board2 = list(board2)
+        expected_board2[12] = 0
+        self.assertEqual(cartella_resp.data["cartellas"][0]["cartella_numbers"], expected_board2)
         self.assertEqual(len(cartella_resp.data["cartellas"][0]["cartella_draw_sequence"]), 75)
 
     def test_public_cartella_lookup_multiple(self):
         headers = self.auth_headers()
+        board1 = list(range(1, 26))
+        board2 = list(range(26, 51))
         payload = {
             "bet_amount": "10.00",
             "num_players": 1,
             "win_amount": "50.00",
-            "cartella_numbers": [[1, 2, 3], [4, 5, 6]],
+            "cartella_numbers": [board1, board2],
         }
         create_resp = self.client.post(reverse("games"), payload, format="json", **headers)
         code = create_resp.data["game_code"]
@@ -220,6 +226,64 @@ class GameTests(APITestCase):
         self.assertEqual(len(resp.data["cartellas"]), 2)
         self.assertEqual(resp.data["cartellas"][0]["cartella_number"], 2)
         self.assertEqual(resp.data["cartellas"][1]["cartella_number"], 1)
+
+    def test_public_cartella_endpoints_support_shop_cartella_number_map(self):
+        headers = self.auth_headers()
+        session_resp = self.client.post(
+            reverse("shop-mode-session-create"),
+            {"min_bet_per_cartella": "20.00"},
+            format="json",
+            **headers,
+        )
+        self.assertEqual(session_resp.status_code, status.HTTP_201_CREATED)
+        session_id = session_resp.data["session_id"]
+
+        reserve_resp = self.client.post(
+            reverse("shop-mode-session-reserve", args=[session_id]),
+            {
+                "player_name": "P1",
+                "cartella_numbers": [101, 102],
+                "bet_per_cartella": "20.00",
+            },
+            format="json",
+            **headers,
+        )
+        self.assertEqual(reserve_resp.status_code, status.HTTP_200_OK)
+
+        create_resp = self.client.post(
+            reverse("shop-mode-session-create-game", args=[session_id]),
+            {},
+            format="json",
+            **headers,
+        )
+        self.assertEqual(create_resp.status_code, status.HTTP_200_OK)
+        code = create_resp.data["game"]["game_code"]
+
+        game = Game.objects.get(game_code=code)
+        game.status = Game.Status.ACTIVE
+        game.save(update_fields=["status"])
+
+        raw_board = get_offline_cartella_board(102)
+        self.assertIsNotNone(raw_board)
+        expected_board = list(raw_board)[:25]
+        expected_board[12] = 0
+
+        check_resp = self.client.post(
+            reverse("public-game-cartella-check"),
+            {"game_id": code, "cartella_numbers": [102]},
+            format="json",
+        )
+        self.assertEqual(check_resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(check_resp.data["missing_cartella_numbers"], [])
+        self.assertEqual(check_resp.data["cartellas"][0]["cartella_number"], 102)
+        self.assertEqual(check_resp.data["cartellas"][0]["cartella_numbers"], expected_board)
+        self.assertEqual(len(check_resp.data["cartellas"][0]["cartella_draw_sequence"]), 75)
+
+        draw_resp = self.client.get(reverse("game-cartella-draw", args=[code, 102]))
+        self.assertEqual(draw_resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(draw_resp.data["cartella_number"], 102)
+        self.assertEqual(draw_resp.data["cartella_numbers"], expected_board)
+        self.assertEqual(len(draw_resp.data["cartella_draw_sequence"]), 75)
 
     def test_public_cartella_lookup_requires_active_game(self):
         headers = self.auth_headers()

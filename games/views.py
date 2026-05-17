@@ -47,6 +47,12 @@ ALLOWED_GAME_STATUS_FILTERS = {choice[0] for choice in Game.Status.choices}
 ALLOWED_TX_TYPE_FILTERS = {choice[0] for choice in Transaction.Type.choices}
 ALLOWED_CLAIM_PATTERNS = {"row", "column", "diagonal"}
 
+PUBLIC_CARTELLA_SHOP_MODES = {
+    Game.Mode.SHOP_FIXED4,
+    Game.Mode.SHOP_ONLINE,
+    Game.Mode.SHOP_OFFLINE,
+}
+
 
 def _normalize_cartella_board(board: list[int] | tuple[int, ...] | None) -> list[int] | None:
     if not isinstance(board, (list, tuple)):
@@ -58,6 +64,77 @@ def _normalize_cartella_board(board: list[int] | tuple[int, ...] | None) -> list
 
     normalized[12] = 0
     return normalized
+
+
+def _resolve_public_cartella_index(game: Game, cartella_number: int) -> int | None:
+    if not isinstance(cartella_number, int):
+        return None
+
+    boards = game.cartella_numbers or []
+    if not isinstance(boards, (list, tuple)):
+        return None
+
+    if game.game_mode in PUBLIC_CARTELLA_SHOP_MODES:
+        cartella_map = game.cartella_number_map
+        if isinstance(cartella_map, dict) and cartella_map:
+            mapped_index = cartella_map.get(str(cartella_number))
+            if mapped_index is None:
+                return None
+            try:
+                cartella_index = int(mapped_index)
+            except (TypeError, ValueError):
+                return None
+        else:
+            # Backward-compatible fallback for older shop games missing the map.
+            cartella_index = cartella_number - 1
+    else:
+        cartella_index = cartella_number - 1
+
+    if cartella_index < 0 or cartella_index >= len(boards):
+        return None
+
+    return cartella_index
+
+
+def _get_or_create_public_cartella_draw_sequence(
+    game: Game,
+    cartella_index: int,
+) -> list[int] | None:
+    boards = game.cartella_numbers or []
+    if not isinstance(boards, (list, tuple)):
+        return None
+
+    sequences_raw = game.cartella_draw_sequences or []
+    if not isinstance(sequences_raw, (list, tuple)):
+        return None
+
+    sequences = list(sequences_raw)
+    target_len = len(boards)
+    changed = False
+
+    if len(sequences) < target_len:
+        sequences.extend(
+            [random.sample(range(1, 76), 75) for _ in range(target_len - len(sequences))]
+        )
+        changed = True
+
+    if cartella_index < 0 or cartella_index >= len(sequences):
+        if changed:
+            game.cartella_draw_sequences = sequences
+            game.save(update_fields=["cartella_draw_sequences"])
+        return None
+
+    sequence = sequences[cartella_index]
+    if not isinstance(sequence, (list, tuple)) or len(sequence) != 75:
+        sequences[cartella_index] = random.sample(range(1, 76), 75)
+        changed = True
+        sequence = sequences[cartella_index]
+
+    if changed:
+        game.cartella_draw_sequences = sequences
+        game.save(update_fields=["cartella_draw_sequences"])
+
+    return list(sequence)
 
 
 def _generate_cartella_board() -> list[int]:
@@ -679,6 +756,7 @@ class GameCartellaDrawView(APIView):
     @extend_schema(
         responses={
             200: GameCartellaDrawResponseSerializer,
+            400: DetailResponseSerializer,
             404: DetailResponseSerializer,
         },
         tags=["Games"],
@@ -686,20 +764,34 @@ class GameCartellaDrawView(APIView):
     )
     def get(self, request, code: str, cartella_number: int):
         game = get_object_or_404(Game, game_code=code)
-        cartella_index = cartella_number - 1
-        if cartella_index < 0 or cartella_index >= len(game.cartella_draw_sequences):
+
+        if game.status != Game.Status.ACTIVE:
+            return Response(
+                {"detail": "Game is not active"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        cartella_index = _resolve_public_cartella_index(game, cartella_number)
+        if cartella_index is None:
             return Response({"detail": "Cartella not found"}, status=status.HTTP_404_NOT_FOUND)
 
         board = _normalize_cartella_board(game.cartella_numbers[cartella_index])
         if board is None:
             return Response({"detail": "Cartella board is invalid"}, status=status.HTTP_400_BAD_REQUEST)
 
+        draw_sequence = _get_or_create_public_cartella_draw_sequence(game, cartella_index)
+        if draw_sequence is None:
+            return Response(
+                {"detail": "Cartella draw sequence is invalid"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         return Response(
             {
                 "game_code": game.game_code,
                 "cartella_number": cartella_number,
                 "cartella_numbers": board,
-                "cartella_draw_sequence": game.cartella_draw_sequences[cartella_index],
+                "cartella_draw_sequence": draw_sequence,
             }
         )
 
@@ -1680,39 +1772,25 @@ class BasePublicGameCartellaView(APIView):
         return None
 
     def _resolve_cartella_index(self, game: Game, cartella_number: int) -> int | None:
-        if game.game_mode in {
-            Game.Mode.SHOP_FIXED4,
-            Game.Mode.SHOP_ONLINE,
-            Game.Mode.SHOP_OFFLINE,
-        }:
-            mapped_index = game.cartella_number_map.get(str(cartella_number))
-            if mapped_index is None:
-                return None
-            return int(mapped_index)
-
-        cartella_index = cartella_number - 1
-        if cartella_index < 0 or cartella_index >= len(game.cartella_numbers):
-            return None
-        return cartella_index
+        return _resolve_public_cartella_index(game, cartella_number)
 
     def _build_cartella_payload(self, game: Game, cartella_number: int):
         cartella_index = self._resolve_cartella_index(game, cartella_number)
         if cartella_index is None:
             return None
 
-        raw_board = game.cartella_numbers[cartella_index]
-        if not isinstance(raw_board, (list, tuple)):
+        board = _normalize_cartella_board(game.cartella_numbers[cartella_index])
+        if board is None:
             return None
 
-        board = list(raw_board)
-        if len(board) >= 25:
-            board = board[:25]
-            board[12] = 0
+        draw_sequence = _get_or_create_public_cartella_draw_sequence(game, cartella_index)
+        if draw_sequence is None:
+            return None
 
         return {
             "cartella_number": cartella_number,
             "cartella_numbers": board,
-            "cartella_draw_sequence": game.cartella_draw_sequences[cartella_index],
+            "cartella_draw_sequence": draw_sequence,
         }
 
 
