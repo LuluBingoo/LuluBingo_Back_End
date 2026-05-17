@@ -1282,6 +1282,112 @@ class ShopBingoSessionCreateGameView(APIView):
                     }
                 )
 
+            incoming_players = None
+            if isinstance(getattr(request, "data", None), dict):
+                incoming_players = request.data.get("players")
+
+            if isinstance(incoming_players, list) and incoming_players:
+                if session.status != ShopBingoSession.Status.WAITING:
+                    return Response(
+                        {"detail": "Session is no longer open"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                bulk_serializer = ShopBingoCartellaSelectSerializer(
+                    data=incoming_players,
+                    many=True,
+                )
+                bulk_serializer.is_valid(raise_exception=True)
+
+                players = list(session.players_data or [])
+                name_to_index = {
+                    str(player.get("player_name", "")).strip().lower(): idx
+                    for idx, player in enumerate(players)
+                    if str(player.get("player_name", "")).strip()
+                }
+                now_iso = timezone.now().isoformat()
+
+                for payload in bulk_serializer.validated_data:
+                    player_name = payload["player_name"]
+                    cartella_numbers = payload["cartella_numbers"]
+                    bet_per_cartella = payload["bet_per_cartella"]
+
+                    if bet_per_cartella < session.min_bet_per_cartella:
+                        return Response(
+                            {
+                                "detail": f"Minimum bet per cartella is {session.min_bet_per_cartella} ETB"
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    player_key = str(player_name).strip().lower()
+                    player_index = name_to_index.get(player_key)
+
+                    if player_index is None and len(cartella_numbers) == 0:
+                        return Response(
+                            {"detail": "Select at least one cartella for a new player"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    if player_index is not None and bool(players[player_index].get("paid", False)):
+                        return Response(
+                            {"detail": "Paid players cannot change cartella selection"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    if player_index is not None and len(cartella_numbers) == 0:
+                        players.pop(player_index)
+                        name_to_index = {
+                            str(player.get("player_name", "")).strip().lower(): idx
+                            for idx, player in enumerate(players)
+                            if str(player.get("player_name", "")).strip()
+                        }
+                        continue
+
+                    player_total = (bet_per_cartella * Decimal(len(cartella_numbers))).quantize(
+                        Decimal("0.01"),
+                        rounding=ROUND_HALF_UP,
+                    )
+                    player_payload = {
+                        "player_name": player_name,
+                        "cartella_numbers": cartella_numbers,
+                        "bet_per_cartella": str(bet_per_cartella),
+                        "total_bet": str(player_total),
+                        "paid": False,
+                        "reserved_at": now_iso,
+                    }
+
+                    if player_index is None:
+                        players.append(player_payload)
+                        name_to_index[player_key] = len(players) - 1
+                    else:
+                        player_payload["paid"] = bool(players[player_index].get("paid", False))
+                        player_payload["paid_at"] = players[player_index].get("paid_at")
+                        players[player_index] = player_payload
+
+                cartellas_seen: set[int] = set()
+                cartellas_dupes: set[int] = set()
+                for player in players:
+                    for raw_number in player.get("cartella_numbers", []) or []:
+                        try:
+                            number = int(raw_number)
+                        except (TypeError, ValueError):
+                            continue
+                        if number in cartellas_seen:
+                            cartellas_dupes.add(number)
+                        cartellas_seen.add(number)
+                if cartellas_dupes:
+                    return Response(
+                        {"detail": f"Cartellas already taken: {sorted(cartellas_dupes)}"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                session.players_data = players
+                locked, total_payable = _recalculate_session_totals(session)
+                session.locked_cartellas = locked
+                session.total_payable = total_payable
+                session.save(update_fields=["players_data", "locked_cartellas", "total_payable", "updated_at"])
+
             players = list(session.players_data)
             if not players:
                 return Response(
@@ -1412,6 +1518,7 @@ class GameAddPlayerView(APIView):
                 )
 
             existing_cartella_boards = list(game.cartella_numbers or [])
+            existing_cartella_count = len(existing_cartella_boards)
 
             if game.game_mode == Game.Mode.SHOP_OFFLINE:
                 new_cartella_boards: list[list[int]] = []
@@ -1593,9 +1700,14 @@ class BasePublicGameCartellaView(APIView):
         if cartella_index is None:
             return None
 
-        board = _normalize_cartella_board(game.cartella_numbers[cartella_index])
-        if board is None:
+        raw_board = game.cartella_numbers[cartella_index]
+        if not isinstance(raw_board, (list, tuple)):
             return None
+
+        board = list(raw_board)
+        if len(board) >= 25:
+            board = board[:25]
+            board[12] = 0
 
         return {
             "cartella_number": cartella_number,

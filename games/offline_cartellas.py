@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import json
+from pathlib import Path
 import random
 from typing import Iterable
 
@@ -10,6 +12,61 @@ OFFLINE_CARTELLA_SEED = 20260306
 OFFLINE_CENTER_INDEX = 12
 OFFLINE_NUMBER_POOL = tuple(range(1, 76))
 OFFLINE_CANDIDATES_PER_BOARD = 48
+
+
+def _load_offline_cartella_catalog_from_file() -> tuple[tuple[int, ...], ...] | None:
+    """Load the offline cartella catalog from the precomputed JSON file.
+
+    This avoids expensive runtime catalog generation on cold starts.
+
+    Supported JSON shapes:
+    - {"1": [..25..], "2": [..], ...}
+    - {"cartellas": {"1": [..], ...}, ...}
+    """
+
+    project_root = Path(__file__).resolve().parents[1]
+    catalog_path = project_root / "OFFLINE_CARTELLA_CATALOG.json"
+    if not catalog_path.exists():
+        return None
+
+    try:
+        payload = json.loads(catalog_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+    if not isinstance(payload, dict):
+        return None
+
+    raw_cartellas = payload.get("cartellas") if isinstance(payload.get("cartellas"), dict) else payload
+    if not isinstance(raw_cartellas, dict):
+        return None
+
+    def normalize_board(board: object) -> tuple[int, ...] | None:
+        if not isinstance(board, list):
+            return None
+        try:
+            normalized = [int(value) for value in board[:25]]
+        except Exception:
+            return None
+        if len(normalized) < 25:
+            return None
+        normalized[OFFLINE_CENTER_INDEX] = 0
+        non_zero = [number for number in normalized if number != 0]
+        if len(non_zero) != 24 or len(set(non_zero)) != 24:
+            return None
+        if any(number < 1 or number > 75 for number in non_zero):
+            return None
+        return tuple(normalized)
+
+    boards: list[tuple[int, ...]] = []
+    for idx in range(1, OFFLINE_CARTELLA_COUNT + 1):
+        raw_board = raw_cartellas.get(str(idx))
+        normalized_board = normalize_board(raw_board)
+        if normalized_board is None:
+            return None
+        boards.append(normalized_board)
+
+    return tuple(boards)
 
 
 def _generate_seeded_board(rng: random.Random) -> list[int]:
@@ -95,6 +152,10 @@ def _similarity_key(candidate: list[int], existing_boards: list[tuple[int, ...]]
 
 @lru_cache(maxsize=1)
 def get_offline_cartella_catalog() -> tuple[tuple[int, ...], ...]:
+    file_catalog = _load_offline_cartella_catalog_from_file()
+    if file_catalog is not None:
+        return file_catalog
+
     rng = random.Random(OFFLINE_CARTELLA_SEED)
     boards: list[tuple[int, ...]] = []
     signatures: set[tuple[int, ...]] = set()
