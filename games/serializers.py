@@ -7,6 +7,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from accounts.models import ShopUser
+from .bonus import settle_bonus_for_completed_game
 from .models import Game, ShopBingoSession
 from transactions.models import Transaction
 from transactions.services import apply_transaction
@@ -94,6 +95,9 @@ class GameSerializer(serializers.ModelSerializer):
             "shop_cut_amount",
             "lulu_cut_amount",
             "shop_net_cut_amount",
+            "bonus_contribution_amount",
+            "bonus_awarded_amount",
+            "bonus_awarded_cartella_index",
             "winning_pattern",
             "created_at",
             "started_at",
@@ -230,6 +234,14 @@ class GameCompleteSerializer(serializers.ModelSerializer):
             if status_value == Game.Status.COMPLETED and instance.payout_credited_at is None:
                 total_pool, payout_amount, shop_cut, lulu_cut, shop_net_cut = _resolve_game_financials(instance)
 
+                winner_index = winners[0] if winners else None
+                payout_amount, shop_net_cut, bonus_contribution, bonus_awarded = settle_bonus_for_completed_game(
+                    game=instance,
+                    winner_cartella_index=winner_index,
+                    payout_amount=payout_amount,
+                    shop_net_cut_amount=shop_net_cut,
+                )
+
                 if lulu_cut > 0:
                     apply_transaction(
                         user=instance.shop,
@@ -244,6 +256,8 @@ class GameCompleteSerializer(serializers.ModelSerializer):
                             "lulu_cut": str(lulu_cut),
                             "shop_net_cut": str(shop_net_cut),
                             "winners": winners,
+                            "bonus_contribution_amount": str(bonus_contribution),
+                            "bonus_awarded_amount": str(bonus_awarded),
                         },
                     )
 
@@ -269,6 +283,9 @@ class GameCompleteSerializer(serializers.ModelSerializer):
                     "shop_cut_amount",
                     "lulu_cut_amount",
                     "shop_net_cut_amount",
+                    "bonus_contribution_amount",
+                    "bonus_awarded_amount",
+                    "bonus_awarded_cartella_index",
                     "payout_credited_at",
                     "refund_credited_at",
                 ]
@@ -482,6 +499,9 @@ class GameClaimResponseSerializer(serializers.Serializer):
     shop_cut_amount = serializers.CharField(required=False)
     lulu_cut_amount = serializers.CharField(required=False)
     shop_net_cut_amount = serializers.CharField(required=False)
+    bonus_contribution_amount = serializers.CharField(required=False)
+    bonus_awarded_amount = serializers.CharField(required=False)
+    bonus_awarded_cartella_index = serializers.IntegerField(required=False, allow_null=True)
     called_numbers = serializers.ListField(child=serializers.IntegerField(), required=False)
     detail = serializers.CharField(required=False)
 

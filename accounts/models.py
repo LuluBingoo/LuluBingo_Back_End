@@ -95,6 +95,10 @@ class ShopUser(AbstractBaseUser, PermissionsMixin):
         SUSPENDED = "suspended", "Suspended"
         BLOCKED = "blocked", "Blocked"
 
+    class BonusFundingSource(models.TextChoices):
+        PLAYERS = "players", "Players"
+        SHOP = "shop", "Shop"
+
     username = models.CharField(max_length=150, unique=True)
     name = models.CharField(max_length=255, default="New Shop")
     shop_code = models.SlugField(max_length=60, unique=True, editable=False, default=generate_default_shop_code)
@@ -108,6 +112,18 @@ class ShopUser(AbstractBaseUser, PermissionsMixin):
     commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=5)
     shop_cut_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=10)
     lulu_cut_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=15)
+    bonus_enabled = models.BooleanField(default=False)
+    bonus_funding_source = models.CharField(
+        max_length=20,
+        choices=BonusFundingSource.choices,
+        default=BonusFundingSource.PLAYERS,
+    )
+    bonus_contribution_per_cartella = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    bonus_min_rounds = models.PositiveIntegerField(default=3)
+    bonus_max_rounds = models.PositiveIntegerField(default=8)
+    bonus_round_counter = models.PositiveIntegerField(default=0)
+    bonus_next_award_round = models.PositiveIntegerField(default=0)
+    bonus_pot_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     max_stake = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     feature_flags = models.JSONField(default=dict, blank=True)
     bank_name = models.CharField(max_length=100, blank=True)

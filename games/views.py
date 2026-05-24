@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 from transactions.models import Transaction
 from transactions.services import apply_transaction
 
+from .bonus import settle_bonus_for_completed_game
 from .offline_cartellas import get_offline_cartella_board
 from .models import Game, ShopBingoSession
 from .serializers import (
@@ -1058,6 +1059,13 @@ class GameClaimView(APIView):
 
                 total_pool, payout_amount, shop_cut, lulu_cut, shop_net_cut = _resolve_game_financials(game)
 
+                payout_amount, shop_net_cut, bonus_contribution, bonus_awarded = settle_bonus_for_completed_game(
+                    game=game,
+                    winner_cartella_index=cartella_index,
+                    payout_amount=payout_amount,
+                    shop_net_cut_amount=shop_net_cut,
+                )
+
                 if lulu_cut > 0:
                     apply_transaction(
                         user=game.shop,
@@ -1074,6 +1082,8 @@ class GameClaimView(APIView):
                             "shop_net_cut": str(shop_net_cut),
                             "winner_cartella_index": cartella_index,
                             "pattern": selected_pattern,
+                            "bonus_contribution_amount": str(bonus_contribution),
+                            "bonus_awarded_amount": str(bonus_awarded),
                         },
                     )
 
@@ -1084,6 +1094,8 @@ class GameClaimView(APIView):
                         "shop_cut_amount": str(shop_cut),
                         "lulu_cut_amount": str(lulu_cut),
                         "shop_net_cut_amount": str(shop_net_cut),
+                        "bonus_contribution_amount": str(bonus_contribution),
+                        "bonus_awarded_amount": str(bonus_awarded),
                     }
                 )
                 claim_log.append(claim_event)
@@ -1114,6 +1126,9 @@ class GameClaimView(APIView):
                         "shop_cut_amount",
                         "lulu_cut_amount",
                         "shop_net_cut_amount",
+                        "bonus_contribution_amount",
+                        "bonus_awarded_amount",
+                        "bonus_awarded_cartella_index",
                         "ended_at",
                         "awarded_claims",
                         "call_cursor",
@@ -1136,6 +1151,9 @@ class GameClaimView(APIView):
                         "shop_cut_amount": str(shop_cut),
                         "lulu_cut_amount": str(lulu_cut),
                         "shop_net_cut_amount": str(shop_net_cut),
+                        "bonus_contribution_amount": str(bonus_contribution),
+                        "bonus_awarded_amount": str(bonus_awarded),
+                        "bonus_awarded_cartella_index": game.bonus_awarded_cartella_index,
                         "detail": "Bingo confirmed. Game completed.",
                     },
                     status=status.HTTP_200_OK,

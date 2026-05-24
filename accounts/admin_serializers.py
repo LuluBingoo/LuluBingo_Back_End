@@ -103,6 +103,11 @@ class AdminShopCreateSerializer(serializers.ModelSerializer):
             "must_change_password",
             "shop_cut_percentage",
             "lulu_cut_percentage",
+            "bonus_enabled",
+            "bonus_funding_source",
+            "bonus_contribution_per_cartella",
+            "bonus_min_rounds",
+            "bonus_max_rounds",
             "max_stake",
             "feature_flags",
             "bank_name",
@@ -118,6 +123,11 @@ class AdminShopCreateSerializer(serializers.ModelSerializer):
             "bank_account_name": {"required": False, "allow_blank": True},
             "bank_account_number": {"required": False, "allow_blank": True},
             "max_stake": {"required": False},
+            "bonus_enabled": {"required": False},
+            "bonus_funding_source": {"required": False},
+            "bonus_contribution_per_cartella": {"required": False},
+            "bonus_min_rounds": {"required": False},
+            "bonus_max_rounds": {"required": False},
         }
 
     def validate_shop_cut_percentage(self, value: Decimal) -> Decimal:
@@ -130,6 +140,32 @@ class AdminShopCreateSerializer(serializers.ModelSerializer):
         if value <= Decimal("0"):
             raise serializers.ValidationError("Initial balance must be greater than 0.")
         return value
+
+    def validate_bonus_contribution_per_cartella(self, value: Decimal) -> Decimal:
+        normalized = Decimal(str(value))
+        if normalized < Decimal("0"):
+            raise serializers.ValidationError("Bonus contribution must be 0 or greater.")
+        return normalized
+
+    def validate_bonus_min_rounds(self, value: int) -> int:
+        if int(value) < 1:
+            raise serializers.ValidationError("Bonus min rounds must be at least 1.")
+        return int(value)
+
+    def validate_bonus_max_rounds(self, value: int) -> int:
+        if int(value) < 1:
+            raise serializers.ValidationError("Bonus max rounds must be at least 1.")
+        return int(value)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        min_rounds = attrs.get("bonus_min_rounds")
+        max_rounds = attrs.get("bonus_max_rounds")
+        if min_rounds is not None and max_rounds is not None and int(min_rounds) > int(max_rounds):
+            raise serializers.ValidationError(
+                {"bonus_max_rounds": "Bonus max rounds must be greater than or equal to min rounds."}
+            )
+        return attrs
 
     def create(self, validated_data):
         initial_balance = validated_data.pop("initial_balance")
@@ -182,6 +218,11 @@ class AdminShopUpdateSerializer(serializers.ModelSerializer):
             "must_change_password",
             "shop_cut_percentage",
             "lulu_cut_percentage",
+            "bonus_enabled",
+            "bonus_funding_source",
+            "bonus_contribution_per_cartella",
+            "bonus_min_rounds",
+            "bonus_max_rounds",
             "max_stake",
             "feature_flags",
             "bank_name",
@@ -195,6 +236,32 @@ class AdminShopUpdateSerializer(serializers.ModelSerializer):
 
     def validate_lulu_cut_percentage(self, value: Decimal) -> Decimal:
         return _normalize_percentage(value, "Lulu cut percentage")
+
+    def validate_bonus_contribution_per_cartella(self, value: Decimal) -> Decimal:
+        normalized = Decimal(str(value))
+        if normalized < Decimal("0"):
+            raise serializers.ValidationError("Bonus contribution must be 0 or greater.")
+        return normalized
+
+    def validate_bonus_min_rounds(self, value: int) -> int:
+        if int(value) < 1:
+            raise serializers.ValidationError("Bonus min rounds must be at least 1.")
+        return int(value)
+
+    def validate_bonus_max_rounds(self, value: int) -> int:
+        if int(value) < 1:
+            raise serializers.ValidationError("Bonus max rounds must be at least 1.")
+        return int(value)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        min_rounds = attrs.get("bonus_min_rounds")
+        max_rounds = attrs.get("bonus_max_rounds")
+        if min_rounds is not None and max_rounds is not None and int(min_rounds) > int(max_rounds):
+            raise serializers.ValidationError(
+                {"bonus_max_rounds": "Bonus max rounds must be greater than or equal to min rounds."}
+            )
+        return attrs
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
