@@ -436,6 +436,14 @@ class ShopProfileSerializer(serializers.ModelSerializer):
             "two_factor_totp_enabled",
             "two_factor_email_enabled",
             "two_factor_methods",
+            "bonus_enabled",
+            "bonus_funding_source",
+            "bonus_contribution_per_cartella",
+            "bonus_min_rounds",
+            "bonus_max_rounds",
+            "bonus_round_counter",
+            "bonus_next_award_round",
+            "bonus_pot_balance",
             "created_at",
         ]
         read_only_fields = [
@@ -453,6 +461,9 @@ class ShopProfileSerializer(serializers.ModelSerializer):
             "two_factor_totp_enabled",
             "two_factor_email_enabled",
             "two_factor_methods",
+            "bonus_round_counter",
+            "bonus_next_award_round",
+            "bonus_pot_balance",
             "created_at",
         ]
 
