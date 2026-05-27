@@ -301,7 +301,13 @@ class GameClaimSerializer(serializers.Serializer):
         required=False,
     )
     pattern = serializers.ChoiceField(
-        choices=[("row", "row"), ("column", "column"), ("diagonal", "diagonal")],
+        choices=[
+            ("row", "row"),
+            ("column", "column"),
+            ("diagonal", "diagonal"),
+            ("center_column", "center_column"),
+            ("four_corners", "four_corners"),
+        ],
         required=False,
     )
     ban_on_false_claim = serializers.BooleanField(required=False, default=True)

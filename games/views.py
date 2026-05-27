@@ -46,7 +46,7 @@ from .serializers import (
 
 ALLOWED_GAME_STATUS_FILTERS = {choice[0] for choice in Game.Status.choices}
 ALLOWED_TX_TYPE_FILTERS = {choice[0] for choice in Transaction.Type.choices}
-ALLOWED_CLAIM_PATTERNS = {"row", "column", "diagonal"}
+ALLOWED_CLAIM_PATTERNS = {"row", "column", "diagonal", "center_column", "four_corners"}
 
 PUBLIC_CARTELLA_SHOP_MODES = {
     Game.Mode.SHOP_FIXED4,
@@ -234,11 +234,24 @@ def _board_matches_pattern(
                 return True
         return False
 
+    if normalized == "center_column":
+        # Center column is the third column (0-based index 2)
+        return all(is_marked(grid[row][2]) for row in range(5) if row != 1)
+
     if normalized == "column":
         for column in range(5):
             if all(is_marked(grid[row][column]) for row in range(5)):
                 return True
         return False
+
+    if normalized == "four_corners":
+        # Four corners: (0,0), (0,4), (4,0), (4,4)
+        return (
+            is_marked(grid[0][0])
+            and is_marked(grid[0][4])
+            and is_marked(grid[4][0])
+            and is_marked(grid[4][4])
+        )
 
     if normalized == "diagonal":
         main = all(is_marked(grid[idx][idx]) for idx in range(5))
@@ -249,7 +262,8 @@ def _board_matches_pattern(
 
 
 def _detect_winning_pattern(board: list[int], called_set: set[int]) -> str | None:
-    for candidate in ("row", "column", "diagonal"):
+    # Prefer more specific patterns first
+    for candidate in ("four_corners", "center_column", "row", "column", "diagonal"):
         if _board_matches_pattern(board, called_set, candidate):
             return candidate
     return None
@@ -863,8 +877,9 @@ class GameClaimView(APIView):
                     )
 
                 if pattern and pattern not in ALLOWED_CLAIM_PATTERNS:
+                    allowed = ", ".join(sorted(ALLOWED_CLAIM_PATTERNS))
                     return Response(
-                        {"detail": "pattern must be one of: row, column, diagonal"},
+                        {"detail": f"pattern must be one of: {allowed}"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
