@@ -509,6 +509,7 @@ class GameClaimResponseSerializer(serializers.Serializer):
     bonus_awarded_amount = serializers.CharField(required=False)
     bonus_awarded_cartella_index = serializers.IntegerField(required=False, allow_null=True)
     called_numbers = serializers.ListField(child=serializers.IntegerField(), required=False)
+    missing_numbers = serializers.ListField(child=serializers.IntegerField(), required=False)
     detail = serializers.CharField(required=False)
 
 

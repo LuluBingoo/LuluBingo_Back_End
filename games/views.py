@@ -235,8 +235,8 @@ def _board_matches_pattern(
         return False
 
     if normalized == "center_column":
-        # Center column is the third column (0-based index 2)
-        return all(is_marked(grid[row][2]) for row in range(5) if row != 1)
+        # All 5 cells of the N column (index 2). Row 2 is the FREE cell.
+        return all(is_marked(grid[row][2]) for row in range(5))
 
     if normalized == "column":
         for column in range(5):
@@ -267,6 +267,59 @@ def _detect_winning_pattern(board: list[int], called_set: set[int]) -> str | Non
         if _board_matches_pattern(board, called_set, candidate):
             return candidate
     return None
+
+
+# Flat-index line definitions for every winning pattern. Indices are row-major
+# into the 25-cell board; index 12 is always the FREE space.
+_PATTERN_LINE_INDICES: dict[str, list[list[int]]] = {
+    "row": [[r * 5, r * 5 + 1, r * 5 + 2, r * 5 + 3, r * 5 + 4] for r in range(5)],
+    "column": [[c, c + 5, c + 10, c + 15, c + 20] for c in range(5)],
+    "diagonal": [[0, 6, 12, 18, 24], [4, 8, 12, 16, 20]],
+    "center_column": [[2, 7, 12, 17, 22]],
+    "four_corners": [[0, 4, 20, 24]],
+}
+
+
+def _closest_partial_pattern(
+    board: list[int],
+    called_set: set[int],
+) -> tuple[str, list[int]]:
+    """
+    Returns (pattern_name, missing_numbers) for the pattern line with the
+    fewest still-uncalled cells. Used to give the cashier a hint about
+    which numbers are needed next.
+    """
+    normalized = _normalize_cartella_board(board)
+    if normalized is None:
+        return ("", [])
+
+    best_name = ""
+    best_missing: list[int] = []
+    best_count: int | None = None
+
+    for name, line_groups in _PATTERN_LINE_INDICES.items():
+        for line in line_groups:
+            missing = [
+                normalized[idx]
+                for idx in line
+                if normalized[idx] != 0 and normalized[idx] not in called_set
+            ]
+            if best_count is None or len(missing) < best_count:
+                best_count = len(missing)
+                best_name = name
+                best_missing = missing
+
+    return (best_name, best_missing)
+
+
+# Human-readable labels for status messages.
+_PATTERN_HUMAN_LABEL: dict[str, str] = {
+    "row": "row",
+    "column": "column",
+    "diagonal": "diagonal",
+    "center_column": "center column",
+    "four_corners": "four corners",
+}
 
 
 def _ensure_cartella_statuses(game: Game) -> dict[str, str]:
@@ -953,54 +1006,38 @@ class GameClaimView(APIView):
                 # We should strictly use the original generated cartella board.
                 board = original_board
                 
-                # Check for explicit frontend verification forcing the win (as requested)
-                is_frontend_verified = str(request.data.get("frontend_verified", "")).lower() == "true"
-                frontend_pattern = str(request.data.get("frontend_pattern", "")).lower()
-
-                # Debug logging
                 import logging
                 logger = logging.getLogger(__name__)
-                logger.info(f"=== Checking cartella {cartella_index} ===")
-                logger.info(f"Original board: {original_board}")
-                logger.info(f"Board configuration: {game.board_configuration}")
-                logger.info(f"Shuffled board: {board}")
-                
-                # Show board as grid
-                grid = [board[row * 5 : (row + 1) * 5] for row in range(5)]
-                for row_idx, row in enumerate(grid):
-                    logger.info(f"Row {row_idx}: {row}")
-                
-                logger.info(f"Called numbers count: {len(called_numbers)}")
-                logger.info(f"Called numbers: {sorted(called_numbers)}")
-                
-                # Check which numbers in the board are marked
-                marked_in_board = [num for num in board if num == 0 or num in called_numbers]
-                logger.info(f"Marked numbers in board: {marked_in_board} ({len(marked_in_board)}/25)")
-                
-                detected_pattern = _detect_winning_pattern(board, called_numbers)
-                
-                if is_frontend_verified and not detected_pattern:
-                    logger.info(f"Frontend forced win for pattern: {frontend_pattern}")
-                    detected_pattern = frontend_pattern if frontend_pattern else "frontend_forced"
 
-                logger.info(f"Detected pattern: {detected_pattern}")
-                
-                # Check each pattern individually for debugging
-                row_match = _board_matches_pattern(board, called_numbers, "row")
-                col_match = _board_matches_pattern(board, called_numbers, "column")
-                diag_match = _board_matches_pattern(board, called_numbers, "diagonal")
-                logger.info(f"Pattern checks - Row: {row_match}, Column: {col_match}, Diagonal: {diag_match}")
-                
-                # Check each column individually
-                for col_idx in range(5):
-                    col_values = [grid[row][col_idx] for row in range(5)]
-                    col_marked = [val == 0 or val in called_numbers for val in col_values]
-                    logger.info(f"Column {col_idx}: {col_values} -> marked: {col_marked} -> all marked: {all(col_marked)}")
-                
-                logger.info(f"=== End check ===")
-                
-                selected_pattern = pattern or detected_pattern or "row"
-                is_winner = bool(detected_pattern) if not pattern else _board_matches_pattern(board, called_numbers, pattern)
+                # The backend is the sole authority on whether a cartella has won.
+                # The client's requested `pattern` is treated as a hint only — if
+                # the board matches ANY winning pattern, the claim is honoured.
+                detected_pattern = _detect_winning_pattern(board, called_numbers)
+
+                if pattern:
+                    requested_pattern_matches = _board_matches_pattern(
+                        board, called_numbers, pattern
+                    )
+                    if requested_pattern_matches:
+                        selected_pattern = pattern
+                        is_winner = True
+                    elif detected_pattern:
+                        # User tagged the wrong pattern but the board has a real
+                        # winning line; award it for the actually-matched one.
+                        logger.info(
+                            "Cartella %s: requested %s, awarding detected %s",
+                            cartella_index,
+                            pattern,
+                            detected_pattern,
+                        )
+                        selected_pattern = detected_pattern
+                        is_winner = True
+                    else:
+                        selected_pattern = pattern
+                        is_winner = False
+                else:
+                    selected_pattern = detected_pattern or "row"
+                    is_winner = bool(detected_pattern)
 
                 claim_log = list(game.awarded_claims or [])
                 claim_event = {
@@ -1016,12 +1053,32 @@ class GameClaimView(APIView):
                         cartella_statuses[str(cartella_index)] = cartella_statuses.get(
                             str(cartella_index), "active"
                         )
-                        
-                        # Provide detailed feedback about what's missing
-                        detail_parts = [f"No bingo yet. Checked {len(called_numbers)} numbers."]
-                        detail_parts.append(f"Detected pattern: {detected_pattern or 'none'}")
-                        detail_parts.append("Need complete row, column, or diagonal.")
-                        
+
+                        closest_name, missing_numbers = _closest_partial_pattern(
+                            board, called_numbers
+                        )
+                        closest_label = _PATTERN_HUMAN_LABEL.get(
+                            closest_name, closest_name or "pattern"
+                        )
+
+                        detail_parts = [
+                            f"No bingo yet. {len(called_numbers)} of 75 numbers called."
+                        ]
+                        if missing_numbers:
+                            formatted = ", ".join(
+                                _format_called_number(n) for n in sorted(missing_numbers)
+                            )
+                            detail_parts.append(
+                                f"Closest line: {closest_label} — still needs {formatted}."
+                            )
+                        else:
+                            detail_parts.append(
+                                "No partial pattern found near completion."
+                            )
+                        detail_parts.append(
+                            "Winning patterns: row, column, diagonal, center column, four corners."
+                        )
+
                         return Response(
                             {
                                 "game_code": game.game_code,
@@ -1036,14 +1093,8 @@ class GameClaimView(APIView):
                                 "cartella_statuses": cartella_statuses,
                                 "status": game.status,
                                 "called_numbers": called_numbers_sequence,
+                                "missing_numbers": sorted(missing_numbers),
                                 "detail": " ".join(detail_parts),
-                                "debug_info": {
-                                    "row_match": row_match,
-                                    "column_match": col_match,
-                                    "diagonal_match": diag_match,
-                                    "board": board,
-                                    "called_count": len(called_numbers),
-                                },
                             },
                             status=status.HTTP_200_OK,
                         )
