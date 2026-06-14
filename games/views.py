@@ -262,8 +262,9 @@ def _board_matches_pattern(
 
 
 def _detect_winning_pattern(board: list[int], called_set: set[int]) -> str | None:
-    # Prefer more specific patterns first
-    for candidate in ("four_corners", "center_column", "row", "column", "diagonal"):
+    # Order matches the frontend's ALL_BINGO_PATTERNS so both sides agree on
+    # which pattern to credit when several match simultaneously.
+    for candidate in ("row", "column", "diagonal", "center_column", "four_corners"):
         if _board_matches_pattern(board, called_set, candidate):
             return candidate
     return None
